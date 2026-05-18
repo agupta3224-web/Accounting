@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Reconcile - SimpleRentalBooks</title></head>
+<body>
+    <h1>Account Reconciliation</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Check</button>
+    </form>
+    {% if result is not None %}
+        <h2>Result: {% if result %}Reconciled!{% else %}Does not match.{% endif %}</h2>
+    {% endif %}
+    <a href="{% url 'dashboard' %}">Back</a>
+</body>
+</html>

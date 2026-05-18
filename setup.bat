@@ -1,24 +1,51 @@
 @echo off
-echo Starting SimpleRentalBooks setup for Windows...
+setlocal
+echo ==================================================
+echo   SimpleRentalBooks - First Time Setup
+echo ==================================================
+echo.
 
-:: Check if Python is installed
+:: 1. Check for Python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Python is not installed or not in PATH. Please install Python 3.
+    echo ERROR: Python is not found!
+    echo Please install Python 3 from https://www.python.org/
     pause
     exit /b 1
 )
 
-echo Installing dependencies...
-pip install django openpyxl
+:: 2. Create Virtual Environment
+echo [1/3] Creating a private box for the software (venv)...
+python -m venv venv
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to create virtual environment.
+    pause
+    exit /b 1
+)
 
-echo Running migrations...
-python manage.py makemigrations accounting
-python manage.py migrate
+:: 3. Install Dependencies
+echo [2/3] Installing the software engines (Django, etc.)...
+venv\Scripts\python.exe -m pip install -r requirements.txt
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to install software engines.
+    pause
+    exit /b 1
+)
+
+:: 4. Run Migrations
+echo [3/3] Setting up the database...
+venv\Scripts\python.exe manage.py makemigrations accounting
+venv\Scripts\python.exe manage.py migrate
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to set up the database.
+    pause
+    exit /b 1
+)
 
 echo.
-echo --------------------------------------------------
-echo Setup complete!
-echo To start the application, run: python manage.py runserver
-echo --------------------------------------------------
+echo ==================================================
+echo   SUCCESS! Everything is ready.
+echo   To start the app, double-click: start_windows.bat
+echo ==================================================
+echo.
 pause

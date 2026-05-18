@@ -1,19 +1,35 @@
 #!/bin/bash
 
-echo "Starting SimpleRentalBooks setup..."
+echo "=================================================="
+echo "  SimpleRentalBooks - First Time Setup"
+echo "=================================================="
+echo ""
 
-# Install dependencies
-pip install django openpyxl
+# 1. Check for Python
+if ! command -v python3 &> /dev/null
+then
+    echo "ERROR: Python 3 is not found!"
+    echo "Please install Python 3."
+    exit 1
+fi
 
-# Run migrations
-python manage.py makemigrations accounting
-python manage.py migrate
+# 2. Create Virtual Environment
+echo "[1/3] Creating a private box for the software (venv)..."
+python3 -m venv venv
 
-# Create initial data (optional)
-# python manage.py loaddata initial_data.json
+# 3. Install Dependencies
+echo "[2/3] Installing the software engines (Django, etc.)..."
+./venv/bin/pip install -r requirements.txt
+
+# 4. Run Migrations
+echo "[3/3] Setting up the database..."
+./venv/bin/python manage.py makemigrations accounting
+./venv/bin/python manage.py migrate
 
 echo ""
-echo "--------------------------------------------------"
-echo "Setup complete!"
-echo "To start the application, run: python manage.py runserver"
-echo "--------------------------------------------------"
+echo "=================================================="
+echo "  SUCCESS! Everything is ready."
+echo "  To start the app, run: ./start_mac_linux.sh"
+echo "=================================================="
+echo ""
+chmod +x start_mac_linux.sh

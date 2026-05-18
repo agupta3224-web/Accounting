@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Close Books - SimpleRentalBooks</title></head>
+<body>
+    <h1>Close the Books</h1>
+    <p>This will lock all transactions on or before the selected date.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Close Books</button>
+    </form>
+    <a href="{% url 'dashboard' %}">Back</a>
+</body>
+</html>

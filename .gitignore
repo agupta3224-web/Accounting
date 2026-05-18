@@ -1,0 +1,10 @@
+*.pyc
+__pycache__/
+db.sqlite3
+venv/
+server.log
+.DS_Store
+*.zip
+*.bat
+!setup.bat
+!start_windows.bat
