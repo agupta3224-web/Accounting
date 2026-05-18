@@ -23,7 +23,8 @@ echo "[2/3] Installing the software engines (Django, etc.)..."
 
 # 4. Run Migrations
 echo "[3/3] Setting up the database..."
-./venv/bin/python manage.py makemigrations accounting
+# Delete old database if it exists to start fresh
+rm -f db.sqlite3
 ./venv/bin/python manage.py migrate
 ./venv/bin/python seed_data.py
 
