@@ -1,0 +1,73 @@
+from django.db import models
+
+class LLC(models.Model):
+    name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Property(models.Model):
+    name = models.CharField(max_length=255)
+    llc = models.ForeignKey(LLC, on_delete=models.CASCADE, related_name='properties')
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.llc.name} - {self.name}"
+
+class Account(models.Model):
+    ACCOUNT_TYPES = [
+        ('ASSET', 'Asset'),
+        ('LIABILITY', 'Liability'),
+        ('EQUITY', 'Equity'),
+        ('INCOME', 'Income'),
+        ('EXPENSE', 'Expense'),
+    ]
+    name = models.CharField(max_length=255)
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_accounts')
+
+    def __str__(self):
+        return f"{self.name} ({self.account_type})"
+
+class JournalEntry(models.Model):
+    date = models.DateField()
+    description = models.TextField(blank=True)
+    is_closed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"JE {self.id} on {self.date}"
+
+class JournalItem(models.Model):
+    entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.account.name}: {self.debit} / {self.credit}"
+
+class Transaction(models.Model):
+    # Bridge for single-entry UX
+    date = models.DateField()
+    description = models.TextField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    category = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'account_type__in': ['INCOME', 'EXPENSE']})
+    payment_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='payment_transactions', limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']})
+    journal_entry = models.OneToOneField(JournalEntry, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.date}: {self.description} ({self.amount})"
+
+from django.contrib.auth.models import User
+
+class Subscription(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    expiry_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {'Active' if self.is_active else 'Inactive'}"

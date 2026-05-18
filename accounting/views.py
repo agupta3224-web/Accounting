@@ -1,0 +1,135 @@
+from django.shortcuts import render, redirect
+from django.db.models import Sum, Q
+from decimal import Decimal
+from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry
+from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service
+from .utils import import_csv_transactions, import_excel_property_manager
+from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm
+
+def dashboard(request):
+    properties = Property.objects.all()
+    llcs = LLC.objects.all()
+    total_income = JournalItem.objects.filter(account__account_type='INCOME').aggregate(Sum('credit'))['credit__sum'] or 0
+    total_expense = JournalItem.objects.filter(account__account_type='EXPENSE').aggregate(Sum('debit'))['debit__sum'] or 0
+    context = {
+        'properties': properties,
+        'llcs': llcs,
+        'net_income': total_income - total_expense,
+    }
+    return render(request, 'accounting/dashboard.html', context)
+
+def transaction_list(request):
+    transactions = Transaction.objects.all().order_by('-date')
+    return render(request, 'accounting/transaction_list.html', {'transactions': transactions})
+
+def add_transaction(request):
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            tx = form.save()
+            create_journal_entry_from_transaction(tx)
+            return redirect('transaction_list')
+    else:
+        form = TransactionForm()
+    return render(request, 'accounting/transaction_form.html', {'form': form})
+
+def import_file(request):
+    if request.method == 'POST':
+        form = FileImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            format_type = form.cleaned_data['format_type']
+            if format_type == 'pm_excel':
+                import_excel_property_manager(request.FILES['file'])
+            else:
+                csv_type = 'bank'
+                if format_type == 'cc_csv': csv_type = 'cc'
+                if format_type == 'pm_csv': csv_type = 'property_manager'
+
+                import_csv_transactions(
+                    request.FILES['file'],
+                    form.cleaned_data['property'].id,
+                    form.cleaned_data['payment_account'].id,
+                    csv_type
+                )
+            return redirect('transaction_list')
+    else:
+        form = FileImportForm()
+    return render(request, 'accounting/import_file.html', {'form': form})
+
+def profit_and_loss(request):
+    # Filtering logic
+    prop_id = request.GET.get('property')
+    llc_id = request.GET.get('llc')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    filters = Q()
+    if prop_id: filters &= Q(property_id=prop_id)
+    if llc_id: filters &= Q(property__llc_id=llc_id)
+    if start_date: filters &= Q(entry__date__gte=start_date)
+    if end_date: filters &= Q(entry__date__lte=end_date)
+
+    income_items = JournalItem.objects.filter(filters, account__account_type='INCOME').values('account__name').annotate(total=Sum('credit'))
+    expense_items = JournalItem.objects.filter(filters, account__account_type='EXPENSE').values('account__name').annotate(total=Sum('debit'))
+
+    total_income = sum(item['total'] for item in income_items)
+    total_expense = sum(item['total'] for item in expense_items)
+    net_profit = total_income - total_expense
+
+    # Calculate percentages
+    for item in income_items:
+        item['percent'] = (item['total'] / total_income * 100) if total_income else 0
+    for item in expense_items:
+        item['percent'] = (item['total'] / total_income * 100) if total_income else 0
+
+    context = {
+        'income_items': income_items,
+        'expense_items': expense_items,
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'net_profit': net_profit,
+        'properties': Property.objects.all(),
+        'llcs': LLC.objects.all(),
+    }
+    return render(request, 'accounting/pnl.html', context)
+
+def reconcile(request):
+    result = None
+    if request.method == 'POST':
+        form = ReconciliationForm(request.POST)
+        if form.is_valid():
+            result = reconcile_service(
+                form.cleaned_data['account'].id,
+                form.cleaned_data['end_date'],
+                form.cleaned_data['balance']
+            )
+    else:
+        form = ReconciliationForm()
+    return render(request, 'accounting/reconcile.html', {'form': form, 'result': result})
+
+def close_books_view(request):
+    if request.method == 'POST':
+        form = CloseBooksForm(request.POST)
+        if form.is_valid():
+            close_service(form.cleaned_data['end_date'])
+            return redirect('dashboard')
+    else:
+        form = CloseBooksForm()
+    return render(request, 'accounting/close_books.html', {'form': form})
+
+def add_journal_entry(request):
+    if request.method == 'POST':
+        form = JournalEntryForm(request.POST)
+        if form.is_valid():
+            date = form.cleaned_data['date']
+            desc = form.cleaned_data['description']
+            acc1 = form.cleaned_data['debit_account']
+            acc2 = form.cleaned_data['credit_account']
+            amount = form.cleaned_data['amount']
+            entry = JournalEntry.objects.create(date=date, description=desc)
+            JournalItem.objects.create(entry=entry, account=acc1, debit=amount)
+            JournalItem.objects.create(entry=entry, account=acc2, credit=amount)
+            return redirect('dashboard')
+    else:
+        form = JournalEntryForm()
+    return render(request, 'accounting/journal_entry_form.html', {'form': form})

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SimpleRentalBooks - Dashboard</title>
+</head>
+<body>
+    <h1>Accounting Dashboard</h1>
+    <div>
+        <h2>Summary</h2>
+        <p>Net Income: ${{ net_income }}</p>
+    </div>
+    <div>
+        <h2>Properties</h2>
+        <ul>
+            {% for prop in properties %}
+                <li>{{ prop.name }} ({{ prop.llc.name }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <nav>
+        <a href="{% url 'transaction_list' %}">Transactions</a> |
+        <a href="{% url 'add_transaction' %}">Add Transaction</a> |
+        <a href="{% url 'import_file' %}">Import File</a> |
+        <a href="{% url 'reconcile' %}">Reconcile</a> |
+        <a href="{% url 'close_books' %}">Close Books</a> |
+        <a href="{% url 'add_journal_entry' %}">General Journal Entry</a> |
+        <a href="{% url 'pnl' %}">P&L Report</a>
+    </nav>
+</body>
+</html>

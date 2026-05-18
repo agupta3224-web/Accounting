@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Import File - SimpleRentalBooks</title></head>
+<body>
+    <h1>Import Transactions</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <p><small>Note: Property and Payment Account are only required for CSV imports.</small></p>
+        <button type="submit">Import</button>
+    </form>
+    <a href="{% url 'dashboard' %}">Back</a>
+</body>
+</html>

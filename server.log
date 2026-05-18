@@ -1,0 +1,17 @@
+Watching for file changes with StatReloader
+[18/May/2026 16:56:58] "GET / HTTP/1.1" 200 755
+[18/May/2026 16:56:59] "GET /transactions/add/ HTTP/1.1" 200 960
+[18/May/2026 16:56:59] "POST /transactions/add/ HTTP/1.1" 200 960
+[18/May/2026 16:58:44] "GET / HTTP/1.1" 200 755
+[18/May/2026 16:58:44] "GET /transactions/add/ HTTP/1.1" 200 960
+[18/May/2026 17:01:01] "GET / HTTP/1.1" 200 755
+[18/May/2026 17:01:01] "GET /transactions/add/ HTTP/1.1" 200 960
+[18/May/2026 17:01:54] "GET /transactions/add/ HTTP/1.1" 200 960
+[18/May/2026 17:04:10] "GET /transactions/add/ HTTP/1.1" 200 1652
+[18/May/2026 17:04:38] "GET / HTTP/1.1" 200 755
+[18/May/2026 17:04:38] "GET /transactions/add/ HTTP/1.1" 200 1652
+[18/May/2026 17:06:19] "GET / HTTP/1.1" 200 755
+[18/May/2026 17:06:19] "GET /transactions/add/ HTTP/1.1" 200 1652
+[18/May/2026 17:06:19] "POST /transactions/add/ HTTP/1.1" 302 0
+[18/May/2026 17:06:19] "GET /transactions/ HTTP/1.1" 200 615
+[18/May/2026 17:06:19] "GET /pnl/ HTTP/1.1" 200 1472
