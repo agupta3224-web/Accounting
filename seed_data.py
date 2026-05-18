@@ -10,7 +10,12 @@ django.setup()
 from django.contrib.auth.models import User
 from accounting.models import Account, AccountingClass
 
+import time
+
 def seed():
+    # Wait a moment for disk I/O if needed
+    time.sleep(1)
+
     # 1. Create Superuser
     if not User.objects.filter(username='admin').exists():
         User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
