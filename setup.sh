@@ -25,6 +25,7 @@ echo "[2/3] Installing the software engines (Django, etc.)..."
 echo "[3/3] Setting up the database..."
 ./venv/bin/python manage.py makemigrations accounting
 ./venv/bin/python manage.py migrate
+./venv/bin/python seed_data.py
 
 echo ""
 echo "=================================================="

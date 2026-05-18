@@ -16,15 +16,22 @@
                 <li>{{ prop.name }} ({{ prop.llc.name }})</li>
             {% endfor %}
         </ul>
+        <a href="{% url 'add_llc' %}">Add LLC</a> | <a href="{% url 'add_property' %}">Add Property</a> | <a href="{% url 'add_class' %}">Add Custom Class</a>
     </div>
     <nav>
+        <h3>Operations</h3>
         <a href="{% url 'transaction_list' %}">Transactions</a> |
         <a href="{% url 'add_transaction' %}">Add Transaction</a> |
         <a href="{% url 'import_file' %}">Import File</a> |
         <a href="{% url 'reconcile' %}">Reconcile</a> |
         <a href="{% url 'close_books' %}">Close Books</a> |
-        <a href="{% url 'add_journal_entry' %}">General Journal Entry</a> |
-        <a href="{% url 'pnl' %}">P&L Report</a>
+        <a href="{% url 'add_journal_entry' %}">General Journal Entry</a>
+
+        <h3>Reporting & Setup</h3>
+        <a href="{% url 'coa_list' %}">Chart of Accounts</a> |
+        <a href="{% url 'pnl' %}">P&L Report</a> |
+        <a href="{% url 'balance_sheet' %}">Balance Sheet</a> |
+        <a href="{% url 'trial_balance' %}">Trial Balance</a>
     </nav>
 </body>
 </html>

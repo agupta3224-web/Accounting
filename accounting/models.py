@@ -1,7 +1,26 @@
 from django.db import models
 
+class AccountingClass(models.Model):
+    """
+    Used for LLCs and Properties (Classes and Sub-classes).
+    e.g. Class: Golden LLC, Sub-class: Apartment A
+    """
+    name = models.CharField(max_length=255)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_classes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Accounting Class"
+        verbose_name_plural = "Accounting Classes"
+
+    def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} : {self.name}"
+        return self.name
+
 class LLC(models.Model):
     name = models.CharField(max_length=255)
+    accounting_class = models.OneToOneField(AccountingClass, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -10,6 +29,7 @@ class LLC(models.Model):
 class Property(models.Model):
     name = models.CharField(max_length=255)
     llc = models.ForeignKey(LLC, on_delete=models.CASCADE, related_name='properties')
+    accounting_class = models.OneToOneField(AccountingClass, on_delete=models.SET_NULL, null=True, blank=True)
     address = models.TextField(blank=True)
 
     def __str__(self):
@@ -23,12 +43,15 @@ class Account(models.Model):
         ('INCOME', 'Income'),
         ('EXPENSE', 'Expense'),
     ]
+    code = models.CharField(max_length=20, unique=True, null=True, blank=True)
     name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_accounts')
 
     def __str__(self):
-        return f"{self.name} ({self.account_type})"
+        prefix = f"{self.code} - " if self.code else ""
+        return f"{prefix}{self.name} ({self.account_type})"
 
 class JournalEntry(models.Model):
     date = models.DateField()

@@ -26,4 +26,12 @@ Once you see "Starting development server at http://127.0.0.1:8000/":
 1. Open your web browser (Chrome, Safari, etc.)
 2. Type "http://127.0.0.1:8000/" in the address bar and press Enter.
 
+
+STEP 4: LOGGING IN
+-------------------
+To use the admin backend, go to: http://127.0.0.1:8000/admin/
+Your login is:
+- Username: admin
+- Password: admin123
+
 That's it! Enjoy your software!

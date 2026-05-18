@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head><title>Balance Sheet - SimpleRentalBooks</title></head>
+<body>
+    <h1>Balance Sheet</h1>
+
+    <form method="get">
+        <label>Property:</label>
+        <select name="property">
+            <option value="">All</option>
+            {% for prop in properties %}
+                <option value="{{ prop.id }}">{{ prop.name }}</option>
+            {% endfor %}
+        </select>
+        <label>LLC:</label>
+        <select name="llc">
+            <option value="">All</option>
+            {% for llc in llcs %}
+                <option value="{{ llc.id }}">{{ llc.name }}</option>
+            {% endfor %}
+        </select>
+        <label>As of:</label><input type="date" name="as_of_date" value="{{ as_of_date }}">
+        <button type="submit">Filter</button>
+    </form>
+
+    <hr>
+
+    <table border="1">
+        <tr><th>Account</th><th>Type</th><th>Balance</th></tr>
+        {% for item in report_data %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.type }}</td>
+                <td>${{ item.balance }}</td>
+            </tr>
+        {% endfor %}
+        <tr><td colspan="2"><strong>Total Assets</strong></td><td><strong>${{ total_assets }}</strong></td></tr>
+        <tr><td colspan="2"><strong>Total Liabilities & Equity</strong></td><td><strong>${{ total_liab_equity }}</strong></td></tr>
+    </table>
+
+    <br>
+    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+</body>
+</html>

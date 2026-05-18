@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction, LLC, Property, Account, JournalEntry
+from .models import Transaction, LLC, Property, Account, JournalEntry, AccountingClass
 
 class TransactionForm(forms.ModelForm):
     class Meta:
@@ -34,3 +34,23 @@ class JournalEntryForm(forms.Form):
     debit_account = forms.ModelChoiceField(queryset=Account.objects.all())
     credit_account = forms.ModelChoiceField(queryset=Account.objects.all())
     amount = forms.DecimalField(max_digits=12, decimal_places=2)
+
+class AccountForm(forms.ModelForm):
+    class Meta:
+        model = Account
+        fields = ['code', 'name', 'account_type', 'parent', 'description']
+
+class LLCForm(forms.ModelForm):
+    class Meta:
+        model = LLC
+        fields = ['name']
+
+class PropertyForm(forms.ModelForm):
+    class Meta:
+        model = Property
+        fields = ['name', 'llc', 'address']
+
+class AccountingClassForm(forms.ModelForm):
+    class Meta:
+        model = AccountingClass
+        fields = ['name', 'parent']
