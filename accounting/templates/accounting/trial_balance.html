@@ -1,43 +1,66 @@
-<!DOCTYPE html>
-<html>
-<head><title>Trial Balance - SimpleRentalBooks</title></head>
-<body>
-    <h1>Trial Balance</h1>
+{% extends 'accounting/base.html' %}
 
-    <form method="get">
-        <label>Property:</label>
-        <select name="property">
-            <option value="">All</option>
-            {% for prop in properties %}
-                <option value="{{ prop.id }}">{{ prop.name }}</option>
-            {% endfor %}
-        </select>
-        <label>LLC:</label>
-        <select name="llc">
-            <option value="">All</option>
-            {% for llc in llcs %}
-                <option value="{{ llc.id }}">{{ llc.name }}</option>
-            {% endfor %}
-        </select>
-        <label>As of:</label><input type="date" name="as_of_date" value="{{ as_of_date }}">
-        <button type="submit">Filter</button>
+{% block title %}Trial Balance - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <h1 class="h3 mb-4">Trial Balance</h1>
+
+    <form method="get" class="row g-3 mb-5 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small text-muted">Property</label>
+            <select name="property" class="form-select">
+                <option value="">All Properties</option>
+                {% for prop in properties %}
+                    <option value="{{ prop.id }}">{{ prop.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted">LLC</label>
+            <select name="llc" class="form-select">
+                <option value="">All LLCs</option>
+                {% for llc in llcs %}
+                    <option value="{{ llc.id }}">{{ llc.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted">As of</label>
+            <input type="date" name="as_of_date" class="form-control" value="{{ as_of_date }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
     </form>
 
-    <hr>
-
-    <table border="1">
-        <tr><th>Account</th><th>Debit</th><th>Credit</th></tr>
-        {% for item in report_data %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>${{ item.debit }}</td>
-                <td>${{ item.credit }}</td>
-            </tr>
-        {% endfor %}
-        <tr><td><strong>Total</strong></td><td><strong>${{ total_debit }}</strong></td><td><strong>${{ total_credit }}</strong></td></tr>
-    </table>
-
-    <br>
-    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-</body>
-</html>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-light text-center">
+                <tr>
+                    <th rowspan="2" class="align-middle">Account</th>
+                    <th colspan="2">Balance</th>
+                </tr>
+                <tr>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report_data %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td class="text-end">{% if item.debit > 0 %}${{ item.debit|floatformat:2 }}{% endif %}</td>
+                        <td class="text-end">{% if item.credit > 0 %}${{ item.credit|floatformat:2 }}{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                <tr class="table-dark fw-bold">
+                    <td>TOTAL</td>
+                    <td class="text-end">${{ total_debit|floatformat:2 }}</td>
+                    <td class="text-end">${{ total_credit|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

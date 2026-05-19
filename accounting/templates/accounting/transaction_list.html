@@ -1,29 +1,39 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Transactions - SimpleRentalBooks</title>
-</head>
-<body>
-    <h1>Transactions</h1>
-    <table border="1">
-        <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Amount</th>
-            <th>Property</th>
-            <th>Category</th>
-        </tr>
-        {% for tx in transactions %}
-        <tr>
-            <td>{{ tx.date }}</td>
-            <td>{{ tx.description }}</td>
-            <td>{{ tx.amount }}</td>
-            <td>{{ tx.property.name }}</td>
-            <td>{{ tx.category.name }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <br>
-    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-</body>
-</html>
+{% extends 'accounting/base.html' %}
+
+{% block title %}Transactions - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Transactions</h1>
+        <a href="{% url 'add_transaction' %}" class="btn btn-primary">Add Transaction</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Property</th>
+                    <th>Category</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.date }}</td>
+                    <td>{{ tx.description }}</td>
+                    <td><small>{{ tx.property.name }}</small></td>
+                    <td><span class="badge bg-light text-dark border">{{ tx.category.name }}</span></td>
+                    <td class="text-end fw-bold {% if tx.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+                        ${{ tx.amount|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

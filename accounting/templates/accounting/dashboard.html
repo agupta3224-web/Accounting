@@ -1,37 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SimpleRentalBooks - Dashboard</title>
-</head>
-<body>
-    <h1>Accounting Dashboard</h1>
-    <div>
-        <h2>Summary</h2>
-        <p>Net Income: ${{ net_income }}</p>
-    </div>
-    <div>
-        <h2>Properties</h2>
-        <ul>
-            {% for prop in properties %}
-                <li>{{ prop.name }} ({{ prop.llc.name }})</li>
-            {% endfor %}
-        </ul>
-        <a href="{% url 'add_llc' %}">Add LLC</a> | <a href="{% url 'add_property' %}">Add Property</a> | <a href="{% url 'add_class' %}">Add Custom Class</a>
-    </div>
-    <nav>
-        <h3>Operations</h3>
-        <a href="{% url 'transaction_list' %}">Transactions</a> |
-        <a href="{% url 'add_transaction' %}">Add Transaction</a> |
-        <a href="{% url 'import_file' %}">Import File</a> |
-        <a href="{% url 'reconcile' %}">Reconcile</a> |
-        <a href="{% url 'close_books' %}">Close Books</a> |
-        <a href="{% url 'add_journal_entry' %}">General Journal Entry</a>
+{% extends 'accounting/base.html' %}
 
-        <h3>Reporting & Setup</h3>
-        <a href="{% url 'coa_list' %}">Chart of Accounts</a> |
-        <a href="{% url 'pnl' %}">P&L Report</a> |
-        <a href="{% url 'balance_sheet' %}">Balance Sheet</a> |
-        <a href="{% url 'trial_balance' %}">Trial Balance</a>
-    </nav>
-</body>
-</html>
+{% block title %}Dashboard - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-center p-4">
+            <h5 class="text-muted">Net Income</h5>
+            <h2 class="display-6 {% if net_income >= 0 %}text-success{% else %}text-danger{% endif %}">
+                ${{ net_income|floatformat:2 }}
+            </h2>
+        </div>
+        <div class="card p-4">
+            <h5 class="mb-3">LLCs</h5>
+            <ul class="list-group list-group-flush">
+                {% for llc in llcs %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ llc.name }}
+                    <a href="{% url 'edit_llc' llc.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
+                </li>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'add_llc' %}" class="btn btn-sm btn-outline-primary mt-2">+ Add LLC</a>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Properties</h5>
+                <a href="{% url 'add_property' %}" class="btn btn-sm btn-outline-primary">+ Add Property</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for prop in properties %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ prop.name }} <small class="text-muted">({{ prop.llc.name }})</small>
+                    <a href="{% url 'edit_property' prop.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card p-4 mt-4">
+            <h5>Quick Actions</h5>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'add_transaction' %}" class="btn btn-primary">Add Transaction</a>
+                <a href="{% url 'import_file' %}" class="btn btn-info text-white">Import File</a>
+                <a href="{% url 'reconcile' %}" class="btn btn-secondary">Reconcile</a>
+                <a href="{% url 'close_books' %}" class="btn btn-warning text-white">Close Books</a>
+                <a href="{% url 'add_journal_entry' %}" class="btn btn-dark">Journal Entry</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

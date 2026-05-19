@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import datetime
@@ -206,6 +206,17 @@ def add_account(request):
         form = AccountForm()
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': 'Add Account'})
 
+def edit_account(request, pk):
+    account = get_object_or_404(Account, pk=pk)
+    if request.method == 'POST':
+        form = AccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            return redirect('coa_list')
+    else:
+        form = AccountForm(instance=account)
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Account: {account.name}'})
+
 def add_llc(request):
     if request.method == 'POST':
         form = LLCForm(request.POST)
@@ -219,6 +230,17 @@ def add_llc(request):
     else:
         form = LLCForm()
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': 'Add LLC'})
+
+def edit_llc(request, pk):
+    llc = get_object_or_404(LLC, pk=pk)
+    if request.method == 'POST':
+        form = LLCForm(request.POST, instance=llc)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = LLCForm(instance=llc)
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit LLC: {llc.name}'})
 
 def add_property(request):
     if request.method == 'POST':
@@ -235,6 +257,17 @@ def add_property(request):
         form = PropertyForm()
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': 'Add Property'})
 
+def edit_property(request, pk):
+    prop = get_object_or_404(Property, pk=pk)
+    if request.method == 'POST':
+        form = PropertyForm(request.POST, instance=prop)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = PropertyForm(instance=prop)
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Property: {prop.name}'})
+
 def add_class(request):
     if request.method == 'POST':
         form = AccountingClassForm(request.POST)
@@ -244,6 +277,17 @@ def add_class(request):
     else:
         form = AccountingClassForm()
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': 'Add Class'})
+
+def edit_class(request, pk):
+    acc_class = get_object_or_404(AccountingClass, pk=pk)
+    if request.method == 'POST':
+        form = AccountingClassForm(request.POST, instance=acc_class)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = AccountingClassForm(instance=acc_class)
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Class: {acc_class.name}'})
 
 def add_journal_entry(request):
     if request.method == 'POST':
