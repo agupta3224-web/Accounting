@@ -1,10 +1,21 @@
 from django.db import models
 
+class Company(models.Model):
+    name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Companies"
+
+    def __str__(self):
+        return self.name
+
 class AccountingClass(models.Model):
     """
     Used for LLCs and Properties (Classes and Sub-classes).
     e.g. Class: Golden LLC, Sub-class: Apartment A
     """
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='classes', null=True)
     name = models.CharField(max_length=255)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_classes')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -12,6 +23,7 @@ class AccountingClass(models.Model):
     class Meta:
         verbose_name = "Accounting Class"
         verbose_name_plural = "Accounting Classes"
+        unique_together = ('company', 'name', 'parent')
 
     def __str__(self):
         if self.parent:
@@ -19,6 +31,7 @@ class AccountingClass(models.Model):
         return self.name
 
 class LLC(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='llcs', null=True)
     name = models.CharField(max_length=255)
     accounting_class = models.OneToOneField(AccountingClass, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -48,6 +61,7 @@ class Property(models.Model):
         super().save(*args, **kwargs)
 
 class Vendor(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='vendors', null=True)
     company_name = models.CharField(max_length=255)
     contact_name = models.CharField(max_length=255, blank=True)
 
@@ -71,8 +85,12 @@ class Account(models.Model):
         ('INCOME', 'Income'),
         ('EXPENSE', 'Expense'),
     ]
-    code = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='accounts', null=True)
+    code = models.CharField(max_length=20, null=True, blank=True)
     name = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ('company', 'code')
     description = models.TextField(blank=True)
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_accounts')
@@ -82,6 +100,7 @@ class Account(models.Model):
         return f"{prefix}{self.name} ({self.account_type})"
 
 class JournalEntry(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='journal_entries', null=True)
     date = models.DateField()
     doc_num = models.CharField(max_length=50, blank=True)
     description = models.TextField(blank=True)
@@ -106,6 +125,7 @@ class JournalItem(models.Model):
 
 class Transaction(models.Model):
     # Bridge for single-entry UX
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='transactions', null=True)
     date = models.DateField()
     description = models.TextField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)

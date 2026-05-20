@@ -8,7 +8,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SimpleRentalBooks.settings")
 django.setup()
 
 from django.contrib.auth.models import User
-from accounting.models import Account, AccountingClass
+from accounting.models import Account, AccountingClass, Company
 
 import time
 
@@ -25,7 +25,12 @@ def seed():
             print(f"Note: Could not create superuser via script: {e}")
             print("You can create one manually using: python manage.py createsuperuser")
 
-    # 2. Seed Chart of Accounts
+    # 2. Ensure at least one company exists
+    company, created = Company.objects.get_or_create(name="Default Company")
+    if created:
+        print(f"Created initial company: {company.name}")
+
+    # 3. Seed Chart of Accounts
     accounts = [
         # Assets (1000s)
         ('1000', 'Cash', 'ASSET', 'Main checking account'),
@@ -53,7 +58,7 @@ def seed():
     ]
 
     for code, name, acc_type, desc in accounts:
-        Account.objects.get_or_create(code=code, defaults={
+        Account.objects.get_or_create(code=code, company=company, defaults={
             'name': name,
             'account_type': acc_type,
             'description': desc

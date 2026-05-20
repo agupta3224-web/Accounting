@@ -34,9 +34,8 @@ if %errorlevel% neq 0 (
 
 :: 4. Run Migrations
 echo [3/3] Setting up the database...
-:: Delete old database and previous migrations to ensure a clean state
-if exist db.sqlite3 del db.sqlite3
-if exist accounting\migrations\0001_initial.py del /q accounting\migrations\000*.py
+:: Ensure data directory exists
+if not exist data mkdir data
 :: Ensure migrations are ready
 venv\Scripts\python.exe manage.py makemigrations accounting
 :: Run migrations (creates the tables)

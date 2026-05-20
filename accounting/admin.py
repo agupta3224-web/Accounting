@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import LLC, Property, Account, JournalEntry, JournalItem, Transaction, Subscription, Vendor
+from .models import LLC, Property, Account, JournalEntry, JournalItem, Transaction, Subscription, Vendor, Company, AccountingClass
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at')
+
+@admin.register(AccountingClass)
+class AccountingClassAdmin(admin.ModelAdmin):
+    list_display = ('name', 'parent', 'company')
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):

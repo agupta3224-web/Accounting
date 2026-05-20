@@ -15,7 +15,7 @@ def parse_date(date_str):
             continue
     return datetime.now().date()
 
-def import_csv_transactions(file_obj, property_id, payment_account_id, format_type='bank'):
+def import_csv_transactions(file_obj, property_id, payment_account_id, format_type='bank', company_id=None):
     """
     Import transactions from CSV.
     """
@@ -47,6 +47,7 @@ def import_csv_transactions(file_obj, property_id, payment_account_id, format_ty
         category = Account.objects.filter(account_type='EXPENSE').first()
 
         tx = Transaction.objects.create(
+            company_id=company_id,
             date=date,
             description=desc or "Imported CSV",
             amount=amount,
@@ -59,7 +60,7 @@ def import_csv_transactions(file_obj, property_id, payment_account_id, format_ty
 
     return transactions
 
-def import_excel_property_manager(file_obj):
+def import_excel_property_manager(file_obj, company_id=None):
     """
     Import transactions from Excel based on specific PM mapping:
     B: Date, C: Type, D: Account, E: Doc Num, G: Class, H: Amount
@@ -78,7 +79,7 @@ def import_excel_property_manager(file_obj):
     entries = []
     # Try to find a default LLC if none exists
     from .models import LLC
-    default_llc, _ = LLC.objects.get_or_create(name="Imported LLC")
+    default_llc, _ = LLC.objects.get_or_create(name="Imported LLC", company_id=company_id)
 
     for row in ws.iter_rows(min_row=2): # Skip header
         date_val = row[COL_DATE-1].value
@@ -95,7 +96,7 @@ def import_excel_property_manager(file_obj):
         prop, _ = Property.objects.get_or_create(name=class_name, defaults={'llc': default_llc})
 
         # 2. Get or create Account
-        acc, _ = Account.objects.get_or_create(name=acc_name, defaults={'account_type': 'EXPENSE'})
+        acc, _ = Account.objects.get_or_create(name=acc_name, company_id=company_id, defaults={'account_type': 'EXPENSE'})
 
         # 3. Create Journal Entry
         entry_date = date_val
@@ -105,11 +106,12 @@ def import_excel_property_manager(file_obj):
             entry_date = date_val.date()
 
         entry = JournalEntry.objects.create(
+            company_id=company_id,
             date=entry_date,
             description=f"{type_val} - {doc_num}"
         )
 
-        clearing_acc, _ = Account.objects.get_or_create(name="PM Clearing", defaults={'account_type': 'ASSET'})
+        clearing_acc, _ = Account.objects.get_or_create(name="PM Clearing", company_id=company_id, defaults={'account_type': 'ASSET'})
 
         amount = Decimal(str(amount_val))
         if amount > 0: # Usually income

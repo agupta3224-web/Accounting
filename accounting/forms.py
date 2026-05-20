@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction, LLC, Property, Account, JournalEntry, JournalItem, AccountingClass, Vendor
+from .models import Transaction, LLC, Property, Account, JournalEntry, JournalItem, AccountingClass, Vendor, Company
 
 US_STATES = [
     ('', 'Select State'),
@@ -31,11 +31,24 @@ class FileImportForm(forms.Form):
         ('pm_csv', 'Property Manager CSV'),
         ('pm_excel', 'Property Manager Excel'),
     ])
-    property = forms.ModelChoiceField(queryset=Property.objects.all(), required=False)
-    payment_account = forms.ModelChoiceField(queryset=Account.objects.filter(account_type__in=['ASSET', 'LIABILITY']), required=False)
+    property = forms.ModelChoiceField(queryset=Property.objects.none(), required=False)
+    payment_account = forms.ModelChoiceField(queryset=Account.objects.none(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
+            self.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
 
 class ReconciliationForm(forms.Form):
-    account = forms.ModelChoiceField(queryset=Account.objects.filter(account_type__in=['ASSET', 'LIABILITY']))
+    account = forms.ModelChoiceField(queryset=Account.objects.none())
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
     end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
     balance = forms.DecimalField(max_digits=12, decimal_places=2)
 
@@ -56,6 +69,13 @@ class JournalItemForm(forms.ModelForm):
         model = JournalItem
         fields = ['account', 'debit', 'credit', 'memo', 'accounting_class']
 
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['account'].queryset = Account.objects.filter(company_id=company_id)
+            self.fields['accounting_class'].queryset = AccountingClass.objects.filter(company_id=company_id)
+
 JournalItemFormSet = forms.inlineformset_factory(
     JournalEntry, JournalItem,
     form=JournalItemForm,
@@ -67,6 +87,12 @@ class AccountForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ['code', 'name', 'account_type', 'parent', 'description']
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['parent'].queryset = Account.objects.filter(company_id=company_id)
 
 class LLCForm(forms.ModelForm):
     class Meta:
@@ -81,6 +107,12 @@ class PropertyForm(forms.ModelForm):
             'name', 'short_name', 'sub_class_name', 'llc',
             'address_line_1', 'address_line_2', 'city', 'state', 'zip_code'
         ]
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['llc'].queryset = LLC.objects.filter(company_id=company_id)
 
 class VendorForm(forms.ModelForm):
     state = forms.ChoiceField(choices=US_STATES, required=False)
@@ -105,3 +137,14 @@ class AccountingClassForm(forms.ModelForm):
     class Meta:
         model = AccountingClass
         fields = ['name', 'parent']
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            self.fields['parent'].queryset = AccountingClass.objects.filter(company_id=company_id)
+
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['name']
