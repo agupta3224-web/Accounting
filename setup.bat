@@ -39,7 +39,8 @@ if not exist data mkdir data
 :: Ensure migrations are ready
 venv\Scripts\python.exe manage.py makemigrations accounting
 :: Run migrations (creates the tables)
-venv\Scripts\python.exe manage.py migrate
+:: Use --fake-initial to handle cases where tables already exist from previous manual setups
+venv\Scripts\python.exe manage.py migrate --fake-initial
 if %errorlevel% neq 0 (
     echo ERROR: Database migration failed.
     pause

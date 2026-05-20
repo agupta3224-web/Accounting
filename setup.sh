@@ -28,7 +28,8 @@ mkdir -p data
 # Ensure migrations are ready
 ./venv/bin/python manage.py makemigrations accounting
 # Run migrations (creates the tables)
-./venv/bin/python manage.py migrate
+# Use --fake-initial to handle cases where tables already exist from previous manual setups
+./venv/bin/python manage.py migrate --fake-initial
 # Seed initial data
 ./venv/bin/python seed_data.py
 
