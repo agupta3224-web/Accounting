@@ -3,7 +3,7 @@ from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company
-from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service
+from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
 from .utils import import_csv_transactions, import_excel_property_manager
 from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
 
@@ -15,7 +15,8 @@ def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         if form.is_valid():
-            form.save()
+            company = form.save()
+            setup_standard_accounts(company)
             return redirect('company_list')
     else:
         form = CompanyForm()

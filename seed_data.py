@@ -9,6 +9,7 @@ django.setup()
 
 from django.contrib.auth.models import User
 from accounting.models import Account, AccountingClass, Company
+from accounting.services import setup_standard_accounts
 
 import time
 
@@ -30,40 +31,9 @@ def seed():
     if created:
         print(f"Created initial company: {company.name}")
 
-    # 3. Seed Chart of Accounts
-    accounts = [
-        # Assets (1000s)
-        ('1000', 'Cash', 'ASSET', 'Main checking account'),
-        ('1100', 'Accounts Receivable', 'ASSET', 'Unpaid rent'),
-        ('1500', 'Rental Property', 'ASSET', 'Building value'),
-
-        # Liabilities (2000s)
-        ('2000', 'Accounts Payable', 'LIABILITY', 'Unpaid bills'),
-        ('2100', 'Security Deposits', 'LIABILITY', 'Tenant deposits held'),
-        ('2500', 'Mortgage Payable', 'LIABILITY', 'Loan balance'),
-
-        # Equity (3000s)
-        ('3000', 'Owner Investment', 'EQUITY', 'Initial capital'),
-        ('3900', 'Retained Earnings', 'EQUITY', 'Accumulated profit'),
-
-        # Income (4000s)
-        ('4000', 'Rental Income', 'INCOME', 'Monthly rent'),
-        ('4100', 'Late Fees', 'INCOME', 'Late payment penalties'),
-
-        # Expenses (5000s)
-        ('5000', 'Repairs & Maintenance', 'EXPENSE', 'Fixing things'),
-        ('5100', 'Property Taxes', 'EXPENSE', 'Annual taxes'),
-        ('5200', 'Insurance', 'EXPENSE', 'Property insurance'),
-        ('5300', 'Management Fees', 'EXPENSE', 'Property manager costs'),
-    ]
-
-    for code, name, acc_type, desc in accounts:
-        Account.objects.get_or_create(code=code, company=company, defaults={
-            'name': name,
-            'account_type': acc_type,
-            'description': desc
-        })
-    print(f"Seeded {len(accounts)} accounts into COA.")
+    # 3. Seed Chart of Accounts using the shared service
+    setup_standard_accounts(company)
+    print(f"Seeded accounts into COA for {company.name}.")
 
 if __name__ == "__main__":
     seed()
