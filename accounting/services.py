@@ -14,16 +14,22 @@ def create_journal_entry_from_transaction(single_tx):
         )
 
         # Determine debit/credit based on account types
-        # This is a simplified logic for rental income/expense
-        if single_tx.amount > 0: # Income or Positive expense?
-            # In a real system, we'd handle this more strictly
-            debit_account = single_tx.payment_account
-            credit_account = single_tx.category
-        else:
-            debit_account = single_tx.category
-            credit_account = single_tx.payment_account
-
         abs_amount = abs(single_tx.amount)
+
+        if single_tx.category.account_type == 'INCOME':
+            if single_tx.amount >= 0:
+                debit_account = single_tx.payment_account
+                credit_account = single_tx.category
+            else:
+                debit_account = single_tx.category
+                credit_account = single_tx.payment_account
+        else: # EXPENSE
+            if single_tx.amount >= 0:
+                debit_account = single_tx.category
+                credit_account = single_tx.payment_account
+            else:
+                debit_account = single_tx.payment_account
+                credit_account = single_tx.category
 
         JournalItem.objects.create(
             entry=entry,
