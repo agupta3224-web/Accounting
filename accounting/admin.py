@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import LLC, Property, Account, JournalEntry, JournalItem, Transaction, Subscription
+from .models import LLC, Property, Account, JournalEntry, JournalItem, Transaction, Subscription, Vendor
+
+@admin.register(Vendor)
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ('company_name', 'contact_name', 'city', 'state')
 
 @admin.register(LLC)
 class LLCAdmin(admin.ModelAdmin):

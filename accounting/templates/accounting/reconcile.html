@@ -1,16 +1,44 @@
-<!DOCTYPE html>
-<html>
-<head><title>Reconcile - SimpleRentalBooks</title></head>
-<body>
-    <h1>Account Reconciliation</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Check</button>
-    </form>
-    {% if result is not None %}
-        <h2>Result: {% if result %}Reconciled!{% else %}Does not match.{% endif %}</h2>
-    {% endif %}
-    <a href="{% url 'dashboard' %}">Back</a>
-</body>
-</html>
+{% extends 'accounting/base.html' %}
+
+{% block title %}Reconcile - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h1 class="h3 mb-4">Account Reconciliation</h1>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Check Balance</button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+
+            {% if result is not None %}
+                <div class="mt-4 alert {% if result %}alert-success{% else %}alert-danger{% endif %}">
+                    <h4 class="alert-heading">Result:</h4>
+                    <p class="mb-0">{% if result %}Reconciled! Balance matches.{% else %}Does not match. Please check your entries.{% endif %}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.type !== 'checkbox' && el.type !== 'radio') {
+            el.classList.add('form-control');
+        }
+    });
+</script>
+{% endblock %}

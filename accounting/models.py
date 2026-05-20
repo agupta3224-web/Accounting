@@ -94,6 +94,7 @@ class JournalItem(models.Model):
     entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)
+    vendor = models.ForeignKey('Vendor', on_delete=models.SET_NULL, null=True, blank=True)
     debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
@@ -106,6 +107,7 @@ class Transaction(models.Model):
     description = models.TextField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    vendor = models.ForeignKey('Vendor', on_delete=models.SET_NULL, null=True, blank=True)
     category = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'account_type__in': ['INCOME', 'EXPENSE']})
     payment_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='payment_transactions', limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']})
     journal_entry = models.OneToOneField(JournalEntry, on_delete=models.SET_NULL, null=True, blank=True)

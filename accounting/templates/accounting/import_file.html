@@ -1,14 +1,38 @@
-<!DOCTYPE html>
-<html>
-<head><title>Import File - SimpleRentalBooks</title></head>
-<body>
-    <h1>Import Transactions</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <p><small>Note: Property and Payment Account are only required for CSV imports.</small></p>
-        <button type="submit">Import</button>
-    </form>
-    <a href="{% url 'dashboard' %}">Back</a>
-</body>
-</html>
+{% extends 'accounting/base.html' %}
+
+{% block title %}Import File - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h1 class="h3 mb-4">Import Transactions</h1>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <p class="text-muted small">Note: Property and Payment Account are only required for CSV imports.</p>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-info text-white">Import</button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.type !== 'checkbox' && el.type !== 'radio') {
+            el.classList.add('form-control');
+        }
+    });
+</script>
+{% endblock %}

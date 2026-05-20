@@ -18,6 +18,7 @@
                 <tr>
                     <th>Date</th>
                     <th>Description</th>
+                    <th>Vendor</th>
                     <th>Property</th>
                     <th>Category</th>
                     <th class="text-end">Amount</th>
@@ -28,6 +29,7 @@
                 <tr>
                     <td>{{ tx.date }}</td>
                     <td>{{ tx.description }}</td>
+                    <td>{{ tx.vendor.company_name|default:"-" }}</td>
                     <td><small>{{ tx.property.name }}</small></td>
                     <td><span class="badge bg-light text-dark border">{{ tx.category.name }}</span></td>
                     <td class="text-end fw-bold {% if tx.amount < 0 %}text-danger{% else %}text-success{% endif %}">

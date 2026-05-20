@@ -327,10 +327,11 @@ def add_journal_entry(request):
             desc = form.cleaned_data['description']
             acc1 = form.cleaned_data['debit_account']
             acc2 = form.cleaned_data['credit_account']
+            vendor = form.cleaned_data.get('vendor')
             amount = form.cleaned_data['amount']
             entry = JournalEntry.objects.create(date=date, description=desc)
-            JournalItem.objects.create(entry=entry, account=acc1, debit=amount)
-            JournalItem.objects.create(entry=entry, account=acc2, credit=amount)
+            JournalItem.objects.create(entry=entry, account=acc1, vendor=vendor, debit=amount)
+            JournalItem.objects.create(entry=entry, account=acc2, vendor=vendor, credit=amount)
             return redirect('dashboard')
     else:
         form = JournalEntryForm()

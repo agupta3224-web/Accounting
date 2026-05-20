@@ -18,7 +18,7 @@ US_STATES = [
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['date', 'description', 'amount', 'property', 'category', 'payment_account']
+        fields = ['date', 'description', 'amount', 'property', 'vendor', 'category', 'payment_account']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -47,6 +47,7 @@ class JournalEntryForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}))
     debit_account = forms.ModelChoiceField(queryset=Account.objects.all())
     credit_account = forms.ModelChoiceField(queryset=Account.objects.all())
+    vendor = forms.ModelChoiceField(queryset=Vendor.objects.all(), required=False)
     amount = forms.DecimalField(max_digits=12, decimal_places=2)
 
 class AccountForm(forms.ModelForm):

@@ -28,12 +28,14 @@ def create_journal_entry_from_transaction(single_tx):
             entry=entry,
             account=debit_account,
             property=single_tx.property,
+            vendor=single_tx.vendor,
             debit=abs_amount
         )
         JournalItem.objects.create(
             entry=entry,
             account=credit_account,
             property=single_tx.property,
+            vendor=single_tx.vendor,
             credit=abs_amount
         )
 
