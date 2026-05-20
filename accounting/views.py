@@ -1,5 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from django.contrib import messages
+from django.db import transaction
 from django.db.models import Sum, Q
+from django.core import serializers
 from decimal import Decimal
 from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company
@@ -26,6 +30,136 @@ def select_company(request, pk):
     company = get_object_or_404(Company, pk=pk)
     request.session['active_company_id'] = company.id
     return redirect('dashboard')
+
+def open_sample_company(request):
+    company, created = Company.objects.get_or_create(name='Sample Company')
+    if created:
+        setup_standard_accounts(company)
+    request.session['active_company_id'] = company.id
+    return redirect('dashboard')
+
+def save_company(request):
+    # In a web app with DB persistence, every action is already "saved".
+    # This view provides a visual confirmation for the user.
+    company_id = request.session.get('active_company_id')
+    if company_id:
+        company = get_object_or_404(Company, id=company_id)
+        messages.success(request, f"Company '{company.name}' saved successfully.")
+    return redirect('dashboard')
+
+def copy_company(request):
+    active_id = request.session.get('active_company_id')
+    if not active_id:
+        messages.error(request, "No active company to copy.")
+        return redirect('company_list')
+
+    source_company = get_object_or_404(Company, id=active_id)
+
+    if request.method == 'POST':
+        new_name = request.POST.get('name')
+        if not new_name:
+            messages.error(request, "Please provide a name for the new company.")
+        else:
+            with transaction.atomic():
+                new_company = Company.objects.create(name=new_name)
+
+                # Copy Accounts
+                accounts = Account.objects.filter(company=source_company)
+                acc_mapping = {} # old_id -> new_obj
+                for acc in accounts:
+                    old_id = acc.id
+                    acc.pk = None
+                    acc.company = new_company
+                    acc.save()
+                    acc_mapping[old_id] = acc
+
+                # Fix Account parents
+                for old_id, new_acc in acc_mapping.items():
+                    old_acc = Account.objects.get(id=old_id)
+                    if old_acc.parent_id:
+                        new_acc.parent = acc_mapping.get(old_acc.parent_id)
+                        new_acc.save()
+
+                # Copy Classes
+                classes = AccountingClass.objects.filter(company=source_company)
+                class_mapping = {}
+                for cls in classes:
+                    old_id = cls.id
+                    cls.pk = None
+                    cls.company = new_company
+                    cls.save()
+                    class_mapping[old_id] = cls
+
+                # Fix Class parents
+                for old_id, new_cls in class_mapping.items():
+                    old_cls = AccountingClass.objects.get(id=old_id)
+                    if old_cls.parent_id:
+                        new_cls.parent = class_mapping.get(old_cls.parent_id)
+                        new_cls.save()
+
+                # Copy LLCs
+                llcs = LLC.objects.filter(company=source_company)
+                llc_mapping = {}
+                for llc in llcs:
+                    old_id = llc.id
+                    old_class_id = llc.accounting_class_id
+                    llc.pk = None
+                    llc.company = new_company
+                    llc.accounting_class = class_mapping.get(old_class_id)
+                    llc.save()
+                    llc_mapping[old_id] = llc
+
+                # Copy Properties
+                props = Property.objects.filter(llc__company=source_company)
+                for prop in props:
+                    old_llc_id = prop.llc_id
+                    old_class_id = prop.accounting_class_id
+                    prop.pk = None
+                    prop.llc = llc_mapping.get(old_llc_id)
+                    prop.accounting_class = class_mapping.get(old_class_id)
+                    prop.save()
+
+                # Copy Vendors
+                vendors = Vendor.objects.filter(company=source_company)
+                for v in vendors:
+                    v.pk = None
+                    v.company = new_company
+                    v.save()
+
+                messages.success(request, f"Company '{source_company.name}' copied to '{new_company.name}' successfully.")
+                request.session['active_company_id'] = new_company.id
+                return redirect('dashboard')
+
+    return render(request, 'accounting/generic_form.html', {
+        'title': f"Copy Company: {source_company.name}",
+        'form': CompanyForm() # Reuse CompanyForm for name field
+    })
+
+def backup_company(request):
+    active_id = request.session.get('active_company_id')
+    if not active_id:
+        messages.error(request, "No active company to backup.")
+        return redirect('company_list')
+
+    company = get_object_or_404(Company, id=active_id)
+
+    # Collect all related data
+    data = []
+    data.extend(Account.objects.filter(company=company))
+    data.extend(AccountingClass.objects.filter(company=company))
+    data.extend(LLC.objects.filter(company=company))
+    data.extend(Property.objects.filter(llc__company=company))
+    data.extend(Vendor.objects.filter(company=company))
+    data.extend(JournalEntry.objects.filter(company=company))
+    data.extend(JournalItem.objects.filter(entry__company=company))
+    data.extend(Transaction.objects.filter(company=company))
+
+    serialized_data = serializers.serialize('json', data)
+
+    filename = f"backup_{company.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    response = HttpResponse(serialized_data, content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 def dashboard(request):
     company_id = request.session.get('active_company_id')
