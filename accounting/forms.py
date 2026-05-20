@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction, LLC, Property, Account, JournalEntry, AccountingClass, Vendor
+from .models import Transaction, LLC, Property, Account, JournalEntry, JournalItem, AccountingClass, Vendor
 
 US_STATES = [
     ('', 'Select State'),
@@ -42,13 +42,26 @@ class ReconciliationForm(forms.Form):
 class CloseBooksForm(forms.Form):
     end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
 
-class JournalEntryForm(forms.Form):
-    date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
-    description = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}))
-    debit_account = forms.ModelChoiceField(queryset=Account.objects.all())
-    credit_account = forms.ModelChoiceField(queryset=Account.objects.all())
-    vendor = forms.ModelChoiceField(queryset=Vendor.objects.all(), required=False)
-    amount = forms.DecimalField(max_digits=12, decimal_places=2)
+class JournalEntryForm(forms.ModelForm):
+    class Meta:
+        model = JournalEntry
+        fields = ['date', 'doc_num', 'description']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 2}),
+        }
+
+class JournalItemForm(forms.ModelForm):
+    class Meta:
+        model = JournalItem
+        fields = ['account', 'debit', 'credit', 'memo', 'accounting_class']
+
+JournalItemFormSet = forms.inlineformset_factory(
+    JournalEntry, JournalItem,
+    form=JournalItemForm,
+    extra=4,
+    can_delete=True
+)
 
 class AccountForm(forms.ModelForm):
     class Meta:

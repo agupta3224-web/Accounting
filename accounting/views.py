@@ -5,7 +5,7 @@ from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service
 from .utils import import_csv_transactions, import_excel_property_manager
-from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm
+from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm
 
 def dashboard(request):
     properties = Property.objects.all()
@@ -323,17 +323,17 @@ def class_list(request):
 def add_journal_entry(request):
     if request.method == 'POST':
         form = JournalEntryForm(request.POST)
-        if form.is_valid():
-            date = form.cleaned_data['date']
-            desc = form.cleaned_data['description']
-            acc1 = form.cleaned_data['debit_account']
-            acc2 = form.cleaned_data['credit_account']
-            vendor = form.cleaned_data.get('vendor')
-            amount = form.cleaned_data['amount']
-            entry = JournalEntry.objects.create(date=date, description=desc)
-            JournalItem.objects.create(entry=entry, account=acc1, vendor=vendor, debit=amount)
-            JournalItem.objects.create(entry=entry, account=acc2, vendor=vendor, credit=amount)
+        formset = JournalItemFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
+            entry = form.save()
+            formset.instance = entry
+            formset.save()
             return redirect('dashboard')
     else:
         form = JournalEntryForm()
-    return render(request, 'accounting/journal_entry_form.html', {'form': form})
+        formset = JournalItemFormSet()
+    return render(request, 'accounting/journal_entry_form.html', {
+        'form': form,
+        'formset': formset,
+        'title': 'Add Journal Entry'
+    })
