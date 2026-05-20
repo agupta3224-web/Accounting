@@ -22,13 +22,22 @@
             </thead>
             <tbody>
                 {% for cls in classes %}
-                <tr>
+                <tr class="table-light">
                     <td><strong>{{ cls.name }}</strong></td>
-                    <td>{{ cls.parent.name|default:"-" }}</td>
+                    <td>-</td>
                     <td class="text-end">
                         <a href="{% url 'edit_class' cls.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
                     </td>
                 </tr>
+                {% for sub in cls.sub_classes.all %}
+                <tr>
+                    <td style="padding-left: 2.5rem;">{{ sub.name }}</td>
+                    <td class="text-muted small">{{ cls.name }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'edit_class' sub.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
                 {% endfor %}
             </tbody>
         </table>

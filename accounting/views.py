@@ -316,7 +316,8 @@ def edit_vendor(request, pk):
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Vendor: {vendor.company_name}'})
 
 def class_list(request):
-    classes = AccountingClass.objects.all().order_by('parent__name', 'name')
+    # Only get top level classes, sub-classes will be accessed via related name in template
+    classes = AccountingClass.objects.filter(parent=None).order_by('name')
     return render(request, 'accounting/class_list.html', {'classes': classes})
 
 def add_journal_entry(request):
