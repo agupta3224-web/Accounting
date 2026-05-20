@@ -1,0 +1,37 @@
+{% extends 'accounting/base.html' %}
+
+{% block title %}Accounting Classes - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Accounting Classes</h1>
+        <div class="no-print">
+            <button onclick="window.print()" class="btn btn-outline-secondary">Print List</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Class Name</th>
+                    <th>Parent Class</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cls in classes %}
+                <tr>
+                    <td><strong>{{ cls.name }}</strong></td>
+                    <td>{{ cls.parent.name|default:"-" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'edit_class' cls.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

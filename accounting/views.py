@@ -2,10 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import datetime
-from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass
+from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service
 from .utils import import_csv_transactions, import_excel_property_manager
-from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, AccountForm, LLCForm, PropertyForm, AccountingClassForm
+from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm
 
 def dashboard(request):
     properties = Property.objects.all()
@@ -249,7 +249,8 @@ def add_property(request):
             prop = form.save()
             # Create a matching sub-class under the LLC's class
             parent_class = prop.llc.accounting_class
-            acc_class = AccountingClass.objects.create(name=prop.name, parent=parent_class)
+            class_name = prop.sub_class_name or prop.short_name or prop.name
+            acc_class = AccountingClass.objects.create(name=class_name, parent=parent_class)
             prop.accounting_class = acc_class
             prop.save()
             return redirect('dashboard')
@@ -288,6 +289,35 @@ def edit_class(request, pk):
     else:
         form = AccountingClassForm(instance=acc_class)
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Class: {acc_class.name}'})
+
+def vendor_list(request):
+    vendors = Vendor.objects.all().order_by('company_name')
+    return render(request, 'accounting/vendor_list.html', {'vendors': vendors})
+
+def add_vendor(request):
+    if request.method == 'POST':
+        form = VendorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('vendor_list')
+    else:
+        form = VendorForm()
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': 'Add Vendor'})
+
+def edit_vendor(request, pk):
+    vendor = get_object_or_404(Vendor, pk=pk)
+    if request.method == 'POST':
+        form = VendorForm(request.POST, instance=vendor)
+        if form.is_valid():
+            form.save()
+            return redirect('vendor_list')
+    else:
+        form = VendorForm(instance=vendor)
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Vendor: {vendor.company_name}'})
+
+def class_list(request):
+    classes = AccountingClass.objects.all().order_by('parent__name', 'name')
+    return render(request, 'accounting/class_list.html', {'classes': classes})
 
 def add_journal_entry(request):
     if request.method == 'POST':

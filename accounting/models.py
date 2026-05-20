@@ -27,13 +27,41 @@ class LLC(models.Model):
         return self.name
 
 class Property(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)  # Acts as the full display name
+    short_name = models.CharField(max_length=50, blank=True)
+    sub_class_name = models.CharField(max_length=255, blank=True)
     llc = models.ForeignKey(LLC, on_delete=models.CASCADE, related_name='properties')
     accounting_class = models.OneToOneField(AccountingClass, on_delete=models.SET_NULL, null=True, blank=True)
-    address = models.TextField(blank=True)
+
+    address_line_1 = models.CharField(max_length=255, blank=True)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=2, blank=True)
+    zip_code = models.CharField(max_length=10, blank=True)
 
     def __str__(self):
         return f"{self.llc.name} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.sub_class_name and self.short_name:
+            self.sub_class_name = self.short_name
+        super().save(*args, **kwargs)
+
+class Vendor(models.Model):
+    company_name = models.CharField(max_length=255)
+    contact_name = models.CharField(max_length=255, blank=True)
+
+    address_line_1 = models.CharField(max_length=255, blank=True)
+    address_line_2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=2, blank=True)
+    zip_code = models.CharField(max_length=10, blank=True)
+
+    phone_number = models.CharField(max_length=20, blank=True)
+    email_address = models.EmailField(blank=True)
+
+    def __str__(self):
+        return self.company_name
 
 class Account(models.Model):
     ACCOUNT_TYPES = [

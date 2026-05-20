@@ -1,5 +1,19 @@
 from django import forms
-from .models import Transaction, LLC, Property, Account, JournalEntry, AccountingClass
+from .models import Transaction, LLC, Property, Account, JournalEntry, AccountingClass, Vendor
+
+US_STATES = [
+    ('', 'Select State'),
+    ('AL', 'Alabama'), ('AK', 'Alaska'), ('AZ', 'Arizona'), ('AR', 'Arkansas'), ('CA', 'California'),
+    ('CO', 'Colorado'), ('CT', 'Connecticut'), ('DE', 'Delaware'), ('FL', 'Florida'), ('GA', 'Georgia'),
+    ('HI', 'Hawaii'), ('ID', 'Idaho'), ('IL', 'Illinois'), ('IN', 'Indiana'), ('IA', 'Iowa'),
+    ('KS', 'Kansas'), ('KY', 'Kentucky'), ('LA', 'Louisiana'), ('ME', 'Maine'), ('MD', 'Maryland'),
+    ('MA', 'Massachusetts'), ('MI', 'Michigan'), ('MN', 'Minnesota'), ('MS', 'Mississippi'), ('MO', 'Missouri'),
+    ('MT', 'Montana'), ('NE', 'Nebraska'), ('NV', 'Nevada'), ('NH', 'New Hampshire'), ('NJ', 'New Jersey'),
+    ('NM', 'New Mexico'), ('NY', 'New York'), ('NC', 'North Carolina'), ('ND', 'North Dakota'), ('OH', 'Ohio'),
+    ('OK', 'Oklahoma'), ('OR', 'Oregon'), ('PA', 'Pennsylvania'), ('RI', 'Rhode Island'), ('SC', 'South Carolina'),
+    ('SD', 'South Dakota'), ('TN', 'Tennessee'), ('TX', 'Texas'), ('UT', 'Utah'), ('VT', 'Vermont'),
+    ('VA', 'Virginia'), ('WA', 'Washington'), ('WV', 'West Virginia'), ('WI', 'Wisconsin'), ('WY', 'Wyoming'),
+]
 
 class TransactionForm(forms.ModelForm):
     class Meta:
@@ -46,9 +60,32 @@ class LLCForm(forms.ModelForm):
         fields = ['name']
 
 class PropertyForm(forms.ModelForm):
+    state = forms.ChoiceField(choices=US_STATES, required=False)
     class Meta:
         model = Property
-        fields = ['name', 'llc', 'address']
+        fields = [
+            'name', 'short_name', 'sub_class_name', 'llc',
+            'address_line_1', 'address_line_2', 'city', 'state', 'zip_code'
+        ]
+
+class VendorForm(forms.ModelForm):
+    state = forms.ChoiceField(choices=US_STATES, required=False)
+    class Meta:
+        model = Vendor
+        fields = [
+            'company_name', 'contact_name',
+            'address_line_1', 'address_line_2', 'city', 'state', 'zip_code',
+            'phone_number', 'email_address'
+        ]
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number')
+        if phone:
+            # Strip non-digits
+            digits = "".join(filter(str.isdigit, phone))
+            if len(digits) == 10:
+                return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        return phone
 
 class AccountingClassForm(forms.ModelForm):
     class Meta:
