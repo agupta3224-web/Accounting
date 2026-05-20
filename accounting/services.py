@@ -8,6 +8,7 @@ def create_journal_entry_from_transaction(single_tx):
     """
     with transaction.atomic():
         entry = JournalEntry.objects.create(
+            company=single_tx.company,
             date=single_tx.date,
             description=single_tx.description
         )

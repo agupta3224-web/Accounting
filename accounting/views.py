@@ -143,7 +143,7 @@ def balance_sheet(request):
     if llc_id: filters &= Q(property__llc_id=llc_id)
 
     # Assets, Liabilities, Equity
-    accounts = Account.objects.filter(account_type__in=['ASSET', 'LIABILITY', 'EQUITY'])
+    accounts = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY', 'EQUITY'])
     report_data = []
     total_assets = 0
     total_liab_equity = 0
@@ -183,7 +183,7 @@ def trial_balance(request):
     if prop_id: filters &= Q(property_id=prop_id)
     if llc_id: filters &= Q(property__llc_id=llc_id)
 
-    accounts = Account.objects.all()
+    accounts = Account.objects.filter(company_id=company_id)
     report_data = []
     total_debit = 0
     total_credit = 0
