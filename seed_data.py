@@ -18,8 +18,12 @@ def seed():
 
     # 1. Create Superuser
     if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-        print("Created superuser: admin / admin123")
+        try:
+            User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+            print("Created superuser: admin / admin123")
+        except Exception as e:
+            print(f"Note: Could not create superuser via script: {e}")
+            print("You can create one manually using: python manage.py createsuperuser")
 
     # 2. Seed Chart of Accounts
     accounts = [

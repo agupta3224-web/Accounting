@@ -34,12 +34,18 @@ if %errorlevel% neq 0 (
 
 :: 4. Run Migrations
 echo [3/3] Setting up the database...
-:: Delete old database if it exists to start fresh
+:: Delete old database and previous migrations to ensure a clean state
 if exist db.sqlite3 del db.sqlite3
+if exist accounting\migrations\0001_initial.py del /q accounting\migrations\000*.py
 :: Ensure migrations are ready
 venv\Scripts\python.exe manage.py makemigrations accounting
 :: Run migrations (creates the tables)
 venv\Scripts\python.exe manage.py migrate
+if %errorlevel% neq 0 (
+    echo ERROR: Database migration failed.
+    pause
+    exit /b 1
+)
 :: Seed initial data
 venv\Scripts\python.exe seed_data.py
 if %errorlevel% neq 0 (
