@@ -15,7 +15,7 @@
             <select name="property" class="form-select">
                 <option value="">All Properties</option>
                 {% for prop in properties %}
-                    <option value="{{ prop.id }}">{{ prop.name }}</option>
+                    <option value="{{ prop.id }}">{{ prop }}</option>
                 {% endfor %}
             </select>
         </div>

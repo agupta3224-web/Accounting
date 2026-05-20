@@ -33,7 +33,7 @@
             <ul class="list-group list-group-flush">
                 {% for prop in properties %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ prop.name }} <small class="text-muted">({{ prop.llc.name }})</small>
+                    {{ prop.short_name|default:prop.address_line_1 }} <small class="text-muted">({{ prop.llc.name }})</small>
                     <a href="{% url 'edit_property' prop.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
                 </li>
                 {% endfor %}

@@ -201,7 +201,30 @@ def add_transaction(request):
         form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
         form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
         form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
-    return render(request, 'accounting/transaction_form.html', {'form': form})
+    return render(request, 'accounting/transaction_form.html', {'form': form, 'title': 'Add Transaction'})
+
+def edit_transaction(request, pk):
+    company_id = request.session.get('active_company_id')
+    tx = get_object_or_404(Transaction, pk=pk, company_id=company_id)
+    if request.method == 'POST':
+        form = TransactionForm(request.POST, instance=tx)
+        # Filter choices in the form
+        form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
+        form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
+
+        if form.is_valid():
+            tx = form.save()
+            create_journal_entry_from_transaction(tx)
+            return redirect('transaction_list')
+    else:
+        form = TransactionForm(instance=tx)
+        form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
+        form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
+    return render(request, 'accounting/transaction_form.html', {'form': form, 'title': 'Edit Transaction'})
 
 def import_file(request):
     company_id = request.session.get('active_company_id')
@@ -434,7 +457,7 @@ def add_property(request):
             prop = form.save()
             # Create a matching sub-class under the LLC's class
             parent_class = prop.llc.accounting_class
-            class_name = prop.sub_class_name or prop.short_name or prop.name
+            class_name = prop.sub_class_name or prop.short_name or prop.address_line_1
             acc_class = AccountingClass.objects.create(name=class_name, parent=parent_class, company_id=company_id)
             prop.accounting_class = acc_class
             prop.save()
@@ -453,7 +476,7 @@ def edit_property(request, pk):
             return redirect('dashboard')
     else:
         form = PropertyForm(instance=prop, company_id=company_id)
-    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Property: {prop.name}'})
+    return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Property: {prop.short_name or prop.address_line_1}'})
 
 def add_class(request):
     company_id = request.session.get('active_company_id')

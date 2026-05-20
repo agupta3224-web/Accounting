@@ -93,7 +93,7 @@ def import_excel_property_manager(file_obj, company_id=None):
             continue
 
         # 1. Get or create Property (Class)
-        prop, _ = Property.objects.get_or_create(name=class_name, defaults={'llc': default_llc})
+        prop, _ = Property.objects.get_or_create(short_name=class_name, defaults={'llc': default_llc})
 
         # 2. Get or create Account
         acc, _ = Account.objects.get_or_create(name=acc_name, company_id=company_id, defaults={'account_type': 'EXPENSE'})

@@ -7,7 +7,7 @@ from .services import create_journal_entry_from_transaction
 class AccountingTest(TestCase):
     def setUp(self):
         self.llc = LLC.objects.create(name="Rental LLC")
-        self.prop = Property.objects.create(name="Apartment 1", llc=self.llc)
+        self.prop = Property.objects.create(short_name="Apartment 1", llc=self.llc)
         self.bank = Account.objects.create(name="Checking", account_type="ASSET")
         self.rent = Account.objects.create(name="Rent Income", account_type="INCOME")
         self.expense_acc = Account.objects.create(name="Repairs", account_type="EXPENSE")

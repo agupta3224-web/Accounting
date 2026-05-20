@@ -40,7 +40,6 @@ class LLC(models.Model):
         return self.name
 
 class Property(models.Model):
-    name = models.CharField(max_length=255)  # Acts as the full display name
     short_name = models.CharField(max_length=50, blank=True)
     sub_class_name = models.CharField(max_length=255, blank=True)
     llc = models.ForeignKey(LLC, on_delete=models.CASCADE, related_name='properties')
@@ -53,7 +52,7 @@ class Property(models.Model):
     zip_code = models.CharField(max_length=10, blank=True)
 
     def __str__(self):
-        return f"{self.llc.name} - {self.name}"
+        return f"{self.llc.name} - {self.short_name or self.address_line_1}"
 
     def save(self, *args, **kwargs):
         if not self.sub_class_name and self.short_name:

@@ -19,7 +19,7 @@ class LLCAdmin(admin.ModelAdmin):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'llc')
+    list_display = ('short_name', 'llc', 'city')
     list_filter = ('llc',)
 
 @admin.register(Account)

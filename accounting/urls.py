@@ -12,6 +12,7 @@ urlpatterns = [
     path('companies/backup/', views.backup_company, name='backup_company'),
     path('transactions/', views.transaction_list, name='transaction_list'),
     path('transactions/add/', views.add_transaction, name='add_transaction'),
+    path('transactions/<int:pk>/edit/', views.edit_transaction, name='edit_transaction'),
     path('pnl/', views.profit_and_loss, name='pnl'),
     path('balance-sheet/', views.balance_sheet, name='balance_sheet'),
     path('trial-balance/', views.trial_balance, name='trial_balance'),

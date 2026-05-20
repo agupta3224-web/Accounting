@@ -4,14 +4,22 @@ from .models import JournalEntry, JournalItem, Account, Transaction as SingleTra
 
 def create_journal_entry_from_transaction(single_tx):
     """
-    Creates a double-entry JournalEntry from a single Transaction.
+    Creates or updates a double-entry JournalEntry from a single Transaction.
     """
     with transaction.atomic():
-        entry = JournalEntry.objects.create(
-            company=single_tx.company,
-            date=single_tx.date,
-            description=single_tx.description
-        )
+        if single_tx.journal_entry:
+            entry = single_tx.journal_entry
+            entry.date = single_tx.date
+            entry.description = single_tx.description
+            entry.save()
+            # Clear existing items for re-creation
+            entry.items.all().delete()
+        else:
+            entry = JournalEntry.objects.create(
+                company=single_tx.company,
+                date=single_tx.date,
+                description=single_tx.description
+            )
 
         # Determine debit/credit based on account types
         abs_amount = abs(single_tx.amount)
@@ -46,8 +54,10 @@ def create_journal_entry_from_transaction(single_tx):
             credit=abs_amount
         )
 
-        single_tx.journal_entry = entry
-        single_tx.save()
+        if not single_tx.journal_entry:
+            single_tx.journal_entry = entry
+            single_tx.save()
+
     return entry
 
 def reconcile_account(account_id, end_date, statement_balance):

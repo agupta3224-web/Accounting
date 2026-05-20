@@ -104,7 +104,7 @@ class PropertyForm(forms.ModelForm):
     class Meta:
         model = Property
         fields = [
-            'name', 'short_name', 'sub_class_name', 'llc',
+            'short_name', 'sub_class_name', 'llc',
             'address_line_1', 'address_line_2', 'city', 'state', 'zip_code'
         ]
 
