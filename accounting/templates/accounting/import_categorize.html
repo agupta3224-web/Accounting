@@ -1,0 +1,56 @@
+{% extends 'accounting/base.html' %}
+
+{% block title %}Categorize Import - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <h1 class="h3 mb-4">Categorize Transactions</h1>
+    <p class="text-muted small">Select a category for each transaction. Check "Create Rule" to remember this for future imports.</p>
+
+    <form method="post" action="{% url 'process_import' %}">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 120px;">Date</th>
+                        <th>Description</th>
+                        <th class="text-end" style="width: 100px;">Amount</th>
+                        <th style="width: 300px;">Category</th>
+                        <th class="text-center" style="width: 100px;">Create Rule?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.description }}</td>
+                        <td class="text-end {% if '-' in row.amount %}text-danger{% else %}text-success{% endif %}">
+                            {{ row.amount }}
+                        </td>
+                        <td>
+                            <select name="category_{{ forloop.counter0 }}" class="form-select form-select-sm" required>
+                                <option value="">-- Select Category --</option>
+                                {% for acc in accounts %}
+                                    <option value="{{ acc.id }}" {% if row.suggested_cat == acc.id %}selected{% endif %}>
+                                        {{ acc.name }} ({{ acc.account_type }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" name="rule_{{ forloop.counter0 }}" class="form-check-input">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Complete Import</button>
+            <a href="{% url 'import_file' %}" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

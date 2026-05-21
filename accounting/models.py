@@ -146,3 +146,15 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {'Active' if self.is_active else 'Inactive'}"
+
+class ImportRule(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='import_rules')
+    search_text = models.CharField(max_length=255)
+    category = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'account_type__in': ['INCOME', 'EXPENSE']})
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('company', 'search_text')
+
+    def __str__(self):
+        return f"Rule: {self.search_text} -> {self.category.name}"

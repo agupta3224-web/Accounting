@@ -61,6 +61,20 @@ def import_csv_transactions(file_obj, property_id, payment_account_id, format_ty
 
     return transactions
 
+def parse_csv_preview(file_obj):
+    """
+    Parse CSV and return rows for preview/categorization.
+    """
+    decoded_file = file_obj.read().decode('utf-8-sig')
+    io_string = io.StringIO(decoded_file)
+    reader = csv.DictReader(io_string)
+
+    rows = []
+    for row in reader:
+        row = {k.lower(): v for k, v in row.items() if k is not None}
+        rows.append(row)
+    return rows
+
 def import_excel_property_manager(file_obj, company_id=None):
     """
     Import transactions from Excel based on specific PM mapping:

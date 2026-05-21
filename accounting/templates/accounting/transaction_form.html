@@ -7,12 +7,17 @@
     <div class="col-md-6">
         <div class="card p-4">
             <h1 class="h3 mb-4">Add Transaction</h1>
-            <form method="post">
+            <form method="post" id="transactionForm">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="mb-3">
                         <label class="form-label">{{ field.label }}</label>
-                        {{ field }}
+                        <div class="input-group">
+                            {{ field }}
+                            {% if field.name == 'category' %}
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
+                            {% endif %}
+                        </div>
                         {% if field.errors %}
                             <div class="text-danger small">{{ field.errors }}</div>
                         {% endif %}
@@ -27,11 +32,69 @@
     </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" id="new_cat_name" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select id="new_cat_type" class="form-select">
+                        <option value="INCOME">Income</option>
+                        <option value="EXPENSE" selected>Expense</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="addCategory()">Add Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.querySelectorAll('input, select, textarea').forEach(el => {
         if (el.type !== 'checkbox' && el.type !== 'radio') {
             el.classList.add('form-control');
         }
     });
+
+    async function addCategory() {
+        const name = document.getElementById('new_cat_name').value;
+        const type = document.getElementById('new_cat_type').value;
+        if (!name) return;
+
+        const response = await fetch("{% url 'add_account_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}`
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const select = document.querySelector('select[name="category"]');
+            const option = new Option(data.name, data.id, true, true);
+            select.add(option);
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+            // Clear inputs
+            document.getElementById('new_cat_name').value = '';
+        } else {
+            alert("Error adding category");
+        }
+    }
 </script>
 {% endblock %}

@@ -30,7 +30,10 @@ urlpatterns = [
     path('class/add/', views.add_class, name='add_class'),
     path('class/<int:pk>/edit/', views.edit_class, name='edit_class'),
     path('import/', views.import_file, name='import_file'),
+    path('import/categorize/', views.categorize_import, name='categorize_import'),
+    path('import/process/', views.process_import, name='process_import'),
     path('reconcile/', views.reconcile, name='reconcile'),
     path('close/', views.close_books_view, name='close_books'),
     path('journal/add/', views.add_journal_entry, name='add_journal_entry'),
+    path('ajax/add-account/', views.add_account_ajax, name='add_account_ajax'),
 ]

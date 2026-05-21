@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.core import serializers
 from decimal import Decimal
 from datetime import datetime
-from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company
+from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
-from .utils import import_csv_transactions, import_excel_property_manager
+from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date
 from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
 
 def company_list(request):
@@ -234,22 +234,133 @@ def import_file(request):
             format_type = form.cleaned_data['format_type']
             if format_type == 'pm_excel':
                 import_excel_property_manager(request.FILES['file'], company_id=company_id)
+                return redirect('transaction_list')
             else:
-                csv_type = 'bank'
-                if format_type == 'cc_csv': csv_type = 'cc'
-                if format_type == 'pm_csv': csv_type = 'property_manager'
-
-                import_csv_transactions(
-                    request.FILES['file'],
-                    form.cleaned_data['property'].id,
-                    form.cleaned_data['payment_account'].id,
-                    csv_type,
-                    company_id=company_id
-                )
-            return redirect('transaction_list')
+                # Store import metadata in session
+                request.session['import_data'] = {
+                    'property_id': form.cleaned_data['property'].id if form.cleaned_data['property'] else None,
+                    'payment_account_id': form.cleaned_data['payment_account'].id if form.cleaned_data['payment_account'] else None,
+                    'format_type': format_type,
+                    'rows': parse_csv_preview(request.FILES['file'])
+                }
+                return redirect('categorize_import')
     else:
         form = FileImportForm(company_id=company_id)
     return render(request, 'accounting/import_file.html', {'form': form})
+
+def categorize_import(request):
+    company_id = request.session.get('active_company_id')
+    import_data = request.session.get('import_data')
+    if not import_data:
+        return redirect('import_file')
+
+    accounts = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+    rules = ImportRule.objects.filter(company_id=company_id)
+
+    # Process rows to find suggested categories
+    processed_rows = []
+    for row in import_data['rows']:
+        desc = ""
+        amount = "0"
+
+        ft = import_data['format_type']
+        if ft == 'pm_csv':
+            desc = row.get('comment') or row.get('description') or ""
+            amount = row.get('total') or row.get('amount') or "0"
+        elif ft == 'cc_csv':
+            desc = row.get('description') or row.get('memo') or ""
+            amount = row.get('charge') or row.get('amount') or "0"
+        else: # bank
+            desc = row.get('description') or row.get('memo') or ""
+            amount = row.get('amount') or "0"
+
+        suggested_cat = None
+        for rule in rules:
+            if rule.search_text.lower() in desc.lower():
+                suggested_cat = rule.category_id
+                break
+
+        processed_rows.append({
+            'date': row.get('date') or row.get('transaction date') or row.get('trans. date'),
+            'description': desc,
+            'amount': amount,
+            'suggested_cat': suggested_cat,
+            'raw': row
+        })
+
+    return render(request, 'accounting/import_categorize.html', {
+        'rows': processed_rows,
+        'accounts': accounts,
+        'title': 'Categorize Transactions'
+    })
+
+def process_import(request):
+    company_id = request.session.get('active_company_id')
+    import_data = request.session.pop('import_data', None)
+    if not import_data:
+        return redirect('import_file')
+
+    prop = Property.objects.get(id=import_data['property_id']) if import_data['property_id'] else None
+    payment_account = Account.objects.get(id=import_data['payment_account_id']) if import_data['payment_account_id'] else None
+
+    with transaction.atomic():
+        for i, row in enumerate(import_data['rows']):
+            category_id = request.POST.get(f'category_{i}')
+            if not category_id: continue
+
+            category = Account.objects.get(id=category_id)
+
+            desc = ""
+            amount_str = "0"
+            ft = import_data['format_type']
+            if ft == 'pm_csv':
+                desc = row.get('comment') or row.get('description') or ""
+                amount_str = row.get('total') or row.get('amount') or "0"
+            elif ft == 'cc_csv':
+                desc = row.get('description') or row.get('memo') or ""
+                amount_str = row.get('charge') or row.get('amount') or "0"
+            else: # bank
+                desc = row.get('description') or row.get('memo') or ""
+                amount_str = row.get('amount') or "0"
+
+            date_str = row.get('date') or row.get('transaction date') or row.get('trans. date')
+            date = parse_date(date_str) if date_str else datetime.now().date()
+
+            tx = Transaction.objects.create(
+                company_id=company_id,
+                date=date,
+                description=desc or "Imported CSV",
+                amount=Decimal(amount_str.replace(',', '')),
+                property=prop,
+                payment_account=payment_account,
+                category=category
+            )
+            create_journal_entry_from_transaction(tx)
+
+            # Create rule if requested
+            if request.POST.get(f'rule_{i}') == 'on':
+                ImportRule.objects.get_or_create(
+                    company_id=company_id,
+                    search_text=desc,
+                    defaults={'category': category}
+                )
+
+    messages.success(request, f"Imported {len(import_data['rows'])} transactions.")
+    return redirect('transaction_list')
+
+def add_account_ajax(request):
+    company_id = request.session.get('active_company_id')
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        type = request.POST.get('account_type')
+        if name and type:
+            acc = Account.objects.create(
+                company_id=company_id,
+                name=name,
+                account_type=type
+            )
+            return JsonResponse({'id': acc.id, 'name': str(acc)})
+    return JsonResponse({'error': 'Invalid data'}, status=400)
 
 def profit_and_loss(request):
     company_id = request.session.get('active_company_id')
