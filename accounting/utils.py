@@ -28,7 +28,8 @@ def import_csv_transactions(file_obj, property_id, payment_account_id, format_ty
 
     transactions = []
     for row in reader:
-        row = {k.lower(): v for k, v in row.items()}
+        # csv.DictReader can produce None keys for empty columns
+        row = {k.lower(): v for k, v in row.items() if k is not None}
 
         if format_type == 'property_manager':
             date_str = row.get('transaction date') or row.get('date')
@@ -92,8 +93,10 @@ def import_excel_property_manager(file_obj, company_id=None):
         if date_val is None or amount_val is None:
             continue
 
-        # 1. Get or create Property (Class) - Scoped to company via LLC
-        prop, _ = Property.objects.get_or_create(short_name=class_name, llc__company_id=company_id, defaults={'llc': default_llc})
+        # 1. Get or create Property (Class)
+        prop = Property.objects.filter(short_name=class_name, llc__company_id=company_id).first()
+        if not prop:
+            prop = Property.objects.create(short_name=class_name, llc=default_llc)
 
         # 2. Get or create Account
         acc, _ = Account.objects.get_or_create(name=acc_name, company_id=company_id, defaults={'account_type': 'EXPENSE'})
