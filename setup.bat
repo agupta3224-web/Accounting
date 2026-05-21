@@ -36,6 +36,9 @@ if %errorlevel% neq 0 (
 echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data
+:: Clear old migrations to ensure a clean single-migration state
+:: This allows us to use --fake-initial effectively across different versions
+if exist accounting\migrations\0001_initial.py del /q accounting\migrations\000*.py
 :: Ensure migrations are ready
 venv\Scripts\python.exe manage.py makemigrations accounting
 :: Run migrations (creates the tables)

@@ -25,6 +25,9 @@ echo "[2/3] Installing the software engines (Django, etc.)..."
 echo "[3/3] Setting up the database..."
 # Ensure data directory exists
 mkdir -p data
+# Clear old migrations to ensure a clean single-migration state
+# This allows us to use --fake-initial effectively across different versions
+rm -f accounting/migrations/00*.py
 # Ensure migrations are ready
 ./venv/bin/python manage.py makemigrations accounting
 # Run migrations (creates the tables)
