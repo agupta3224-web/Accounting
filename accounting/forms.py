@@ -31,7 +31,8 @@ class FileImportForm(forms.Form):
         ('pm_csv', 'Property Manager CSV'),
         ('pm_excel', 'Property Manager Excel'),
     ])
-    property = forms.ModelChoiceField(queryset=Property.objects.none(), required=False)
+    property = forms.ModelChoiceField(queryset=Property.objects.none(), required=False, label="Apply to Property")
+    llc = forms.ModelChoiceField(queryset=LLC.objects.none(), required=False, label="OR Apply to LLC")
     payment_account = forms.ModelChoiceField(queryset=Account.objects.none(), required=False)
 
     def __init__(self, *args, **kwargs):
@@ -39,6 +40,7 @@ class FileImportForm(forms.Form):
         super().__init__(*args, **kwargs)
         if company_id:
             self.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
+            self.fields['llc'].queryset = LLC.objects.filter(company_id=company_id)
             self.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
 
 class ReconciliationForm(forms.Form):

@@ -29,14 +29,17 @@
                             {{ row.amount }}
                         </td>
                         <td>
-                            <select name="category_{{ forloop.counter0 }}" class="form-select form-select-sm" required>
-                                <option value="">-- Select Category --</option>
-                                {% for acc in accounts %}
-                                    <option value="{{ acc.id }}" {% if row.suggested_cat == acc.id %}selected{% endif %}>
-                                        {{ acc.name }} ({{ acc.account_type }})
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <div class="input-group input-group-sm">
+                                <select name="category_{{ forloop.counter0 }}" class="form-select form-select-sm category-select" required>
+                                    <option value="">-- Select Category --</option>
+                                    {% for acc in accounts %}
+                                        <option value="{{ acc.id }}" {% if row.suggested_cat == acc.id %}selected{% endif %}>
+                                            {{ acc.name }} ({{ acc.account_type }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
+                            </div>
                         </td>
                         <td class="text-center">
                             <input type="checkbox" name="rule_{{ forloop.counter0 }}" class="form-check-input">
@@ -53,4 +56,66 @@
         </div>
     </form>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" id="new_cat_name" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select id="new_cat_type" class="form-select">
+                        <option value="INCOME">Income</option>
+                        <option value="EXPENSE" selected>Expense</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="addCategory()">Add Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function addCategory() {
+        const name = document.getElementById('new_cat_name').value;
+        const type = document.getElementById('new_cat_type').value;
+        if (!name) return;
+
+        const response = await fetch("{% url 'add_account_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}`
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // Update all category dropdowns in the table
+            document.querySelectorAll('.category-select').forEach(select => {
+                const option = new Option(data.name, data.id);
+                select.add(option);
+            });
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+            // Clear inputs
+            document.getElementById('new_cat_name').value = '';
+        } else {
+            alert("Error adding category");
+        }
+    }
+</script>
 {% endblock %}

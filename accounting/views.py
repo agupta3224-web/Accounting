@@ -239,6 +239,7 @@ def import_file(request):
                 # Store import metadata in session
                 request.session['import_data'] = {
                     'property_id': form.cleaned_data['property'].id if form.cleaned_data['property'] else None,
+                    'llc_id': form.cleaned_data['llc'].id if form.cleaned_data['llc'] else None,
                     'payment_account_id': form.cleaned_data['payment_account'].id if form.cleaned_data['payment_account'] else None,
                     'format_type': format_type,
                     'rows': parse_csv_preview(request.FILES['file'])
@@ -301,6 +302,7 @@ def process_import(request):
         return redirect('import_file')
 
     prop = Property.objects.get(id=import_data['property_id']) if import_data['property_id'] else None
+    llc = LLC.objects.get(id=import_data['llc_id']) if import_data['llc_id'] else None
     payment_account = Account.objects.get(id=import_data['payment_account_id']) if import_data['payment_account_id'] else None
 
     with transaction.atomic():
@@ -332,6 +334,7 @@ def process_import(request):
                 description=desc or "Imported CSV",
                 amount=Decimal(amount_str.replace(',', '')),
                 property=prop,
+                llc=llc,
                 payment_account=payment_account,
                 category=category
             )

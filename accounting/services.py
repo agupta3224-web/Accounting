@@ -39,10 +39,18 @@ def create_journal_entry_from_transaction(single_tx):
                 debit_account = single_tx.payment_account
                 credit_account = single_tx.category
 
+        # Link to the appropriate AccountingClass
+        acc_class = None
+        if single_tx.property and single_tx.property.accounting_class:
+            acc_class = single_tx.property.accounting_class
+        elif single_tx.llc and single_tx.llc.accounting_class:
+            acc_class = single_tx.llc.accounting_class
+
         JournalItem.objects.create(
             entry=entry,
             account=debit_account,
             property=single_tx.property,
+            accounting_class=acc_class,
             vendor=single_tx.vendor,
             debit=abs_amount
         )
@@ -50,6 +58,7 @@ def create_journal_entry_from_transaction(single_tx):
             entry=entry,
             account=credit_account,
             property=single_tx.property,
+            accounting_class=acc_class,
             vendor=single_tx.vendor,
             credit=abs_amount
         )
