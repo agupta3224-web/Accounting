@@ -34,4 +34,16 @@ Your login is:
 - Username: admin
 - Password: admin123
 
+
+STEP 5: HOW TO UPDATE (IMPORTANT!)
+----------------------------------
+When you get a new version of this software:
+1. DO NOT DELETE your old folder.
+2. Find the folder named "data" in your old folder. This contains your business data.
+3. Copy the "data" folder into the new software folder.
+4. Run the "setup" file again (Step 1) to update the system.
+
+Your companies and transactions will be safe!
+
+
 That's it! Enjoy your software!

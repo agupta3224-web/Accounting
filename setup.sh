@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "=================================================="
-echo "  SimpleRentalBooks - First Time Setup"
+echo "  SimpleRentalBooks - Setup & Update"
 echo "=================================================="
 echo ""
 
@@ -15,7 +15,9 @@ fi
 
 # 2. Create Virtual Environment
 echo "[1/3] Creating a private box for the software (venv)..."
-python3 -m venv venv
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+fi
 
 # 3. Install Dependencies
 echo "[2/3] Installing the software engines (Django, etc.)..."
@@ -25,14 +27,10 @@ echo "[2/3] Installing the software engines (Django, etc.)..."
 echo "[3/3] Setting up the database..."
 # Ensure data directory exists
 mkdir -p data
-# Clear old migrations to ensure a clean single-migration state
-# This allows us to use --fake-initial effectively across different versions
-rm -f accounting/migrations/00*.py
-# Ensure migrations are ready
-./venv/bin/python manage.py makemigrations accounting
-# Run migrations (creates the tables)
-# Use --fake-initial to handle cases where tables already exist from previous manual setups
-./venv/bin/python manage.py migrate --fake-initial
+
+# Run migrations
+./venv/bin/python manage.py migrate
+
 # Seed initial data
 ./venv/bin/python seed_data.py
 

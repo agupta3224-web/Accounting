@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo ==================================================
-echo   SimpleRentalBooks - First Time Setup
+echo   SimpleRentalBooks - Setup & Update
 echo ==================================================
 echo.
 
@@ -16,7 +16,9 @@ if %errorlevel% neq 0 (
 
 :: 2. Create Virtual Environment
 echo [1/3] Creating a private box for the software (venv)...
-python -m venv venv
+if not exist venv (
+    python -m venv venv
+)
 if %errorlevel% neq 0 (
     echo ERROR: Failed to create virtual environment.
     pause
@@ -36,19 +38,15 @@ if %errorlevel% neq 0 (
 echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data
-:: Clear old migrations to ensure a clean single-migration state
-:: This allows us to use --fake-initial effectively across different versions
-if exist accounting\migrations\0001_initial.py del /q accounting\migrations\000*.py
-:: Ensure migrations are ready
-venv\Scripts\python.exe manage.py makemigrations accounting
-:: Run migrations (creates the tables)
-:: Use --fake-initial to handle cases where tables already exist from previous manual setups
-venv\Scripts\python.exe manage.py migrate --fake-initial
+
+:: Run migrations
+venv\Scripts\python.exe manage.py migrate
 if %errorlevel% neq 0 (
     echo ERROR: Database migration failed.
     pause
     exit /b 1
 )
+
 :: Seed initial data
 venv\Scripts\python.exe seed_data.py
 if %errorlevel% neq 0 (

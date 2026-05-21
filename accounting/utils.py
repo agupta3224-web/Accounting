@@ -92,8 +92,8 @@ def import_excel_property_manager(file_obj, company_id=None):
         if date_val is None or amount_val is None:
             continue
 
-        # 1. Get or create Property (Class)
-        prop, _ = Property.objects.get_or_create(short_name=class_name, defaults={'llc': default_llc})
+        # 1. Get or create Property (Class) - Scoped to company via LLC
+        prop, _ = Property.objects.get_or_create(short_name=class_name, llc__company_id=company_id, defaults={'llc': default_llc})
 
         # 2. Get or create Account
         acc, _ = Account.objects.get_or_create(name=acc_name, company_id=company_id, defaults={'account_type': 'EXPENSE'})
@@ -108,6 +108,7 @@ def import_excel_property_manager(file_obj, company_id=None):
         entry = JournalEntry.objects.create(
             company_id=company_id,
             date=entry_date,
+            doc_num=doc_num or "",
             description=f"{type_val} - {doc_num}"
         )
 

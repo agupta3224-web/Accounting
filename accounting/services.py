@@ -77,11 +77,14 @@ def reconcile_account(account_id, end_date, statement_balance):
 
     return balance == Decimal(statement_balance)
 
-def close_books(end_date):
+def close_books(end_date, company_id=None):
     """
-    Locks all journal entries up to the end_date.
+    Locks all journal entries up to the end_date for a specific company.
     """
-    JournalEntry.objects.filter(date__lte=end_date).update(is_closed=True)
+    filters = {'date__lte': end_date}
+    if company_id:
+        filters['company_id'] = company_id
+    JournalEntry.objects.filter(**filters).update(is_closed=True)
 
 def setup_standard_accounts(company):
     """

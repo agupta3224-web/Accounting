@@ -381,10 +381,11 @@ def reconcile(request):
     return render(request, 'accounting/reconcile.html', {'form': form, 'result': result})
 
 def close_books_view(request):
+    company_id = request.session.get('active_company_id')
     if request.method == 'POST':
         form = CloseBooksForm(request.POST)
         if form.is_valid():
-            close_service(form.cleaned_data['end_date'])
+            close_service(form.cleaned_data['end_date'], company_id=company_id)
             return redirect('dashboard')
     else:
         form = CloseBooksForm()
