@@ -28,8 +28,18 @@ echo "[3/3] Setting up the database..."
 # Ensure data directory exists
 mkdir -p data
 
-# Run migrations
-./venv/bin/python manage.py migrate
+# Auto-migrate old database if it exists in the root
+if [ -f "db.sqlite3" ] && [ ! -f "data/db.sqlite3" ]; then
+    echo "Found old database, moving it to 'data' folder..."
+    mv db.sqlite3 data/
+fi
+
+# Ensure migrations are ready
+./venv/bin/python manage.py makemigrations accounting
+
+# Run migrations (creates the tables)
+# Use --fake-initial to handle cases where tables already exist from previous manual setups
+./venv/bin/python manage.py migrate --fake-initial
 
 # Seed initial data
 ./venv/bin/python seed_data.py

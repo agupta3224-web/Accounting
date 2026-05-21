@@ -10,12 +10,18 @@ django.setup()
 from django.contrib.auth.models import User
 from accounting.models import Account, AccountingClass, Company
 from accounting.services import setup_standard_accounts
+from django.db import connection
 
 import time
 
 def seed():
     # Wait a moment for disk I/O if needed
     time.sleep(1)
+
+    # 0. Check if tables exist
+    if "accounting_company" not in connection.introspection.table_names():
+        print("ERROR: Database tables are missing. Please run migrations first.")
+        return
 
     # 1. Create Superuser
     if not User.objects.filter(username='admin').exists():

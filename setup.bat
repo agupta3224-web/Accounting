@@ -39,8 +39,20 @@ echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data
 
-:: Run migrations
-venv\Scripts\python.exe manage.py migrate
+:: Auto-migrate old database if it exists in the root
+if exist db.sqlite3 (
+    if not exist data\db.sqlite3 (
+        echo Found old database, moving it to 'data' folder...
+        move db.sqlite3 data\
+    )
+)
+
+:: Ensure migrations are ready
+venv\Scripts\python.exe manage.py makemigrations accounting
+
+:: Run migrations (creates the tables)
+:: Use --fake-initial to handle cases where tables already exist from previous manual setups
+venv\Scripts\python.exe manage.py migrate --fake-initial
 if %errorlevel% neq 0 (
     echo ERROR: Database migration failed.
     pause
