@@ -185,7 +185,7 @@ def add_transaction(request):
         form = TransactionForm(request.POST)
         # Filter choices in the form
         form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
-        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id)
         form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
         form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
 
@@ -198,7 +198,7 @@ def add_transaction(request):
     else:
         form = TransactionForm()
         form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
-        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id)
         form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
         form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
     return render(request, 'accounting/transaction_form.html', {'form': form, 'title': 'Add Transaction'})
@@ -210,7 +210,7 @@ def edit_transaction(request, pk):
         form = TransactionForm(request.POST, instance=tx)
         # Filter choices in the form
         form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
-        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id)
         form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
         form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
 
@@ -221,7 +221,7 @@ def edit_transaction(request, pk):
     else:
         form = TransactionForm(instance=tx)
         form.fields['property'].queryset = Property.objects.filter(llc__company_id=company_id)
-        form.fields['category'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+        form.fields['category'].queryset = Account.objects.filter(company_id=company_id)
         form.fields['payment_account'].queryset = Account.objects.filter(company_id=company_id, account_type__in=['ASSET', 'LIABILITY'])
         form.fields['vendor'].queryset = Vendor.objects.filter(company_id=company_id)
     return render(request, 'accounting/transaction_form.html', {'form': form, 'title': 'Edit Transaction'})
@@ -255,7 +255,7 @@ def categorize_import(request):
     if not import_data:
         return redirect('import_file')
 
-    accounts = Account.objects.filter(company_id=company_id, account_type__in=['INCOME', 'EXPENSE'])
+    accounts = Account.objects.filter(company_id=company_id)
     rules = ImportRule.objects.filter(company_id=company_id)
 
     # Process rows to find suggested categories

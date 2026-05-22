@@ -131,7 +131,7 @@ class Transaction(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)
     llc = models.ForeignKey(LLC, on_delete=models.CASCADE, null=True, blank=True)
     vendor = models.ForeignKey('Vendor', on_delete=models.SET_NULL, null=True, blank=True)
-    category = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'account_type__in': ['INCOME', 'EXPENSE']})
+    category = models.ForeignKey(Account, on_delete=models.CASCADE)
     payment_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='payment_transactions', limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']})
     journal_entry = models.OneToOneField(JournalEntry, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -152,7 +152,7 @@ class Subscription(models.Model):
 class ImportRule(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='import_rules')
     search_text = models.CharField(max_length=255)
-    category = models.ForeignKey(Account, on_delete=models.CASCADE, limit_choices_to={'account_type__in': ['INCOME', 'EXPENSE']})
+    category = models.ForeignKey(Account, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

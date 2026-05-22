@@ -5,6 +5,9 @@ from .models import JournalEntry, JournalItem, Account, Transaction as SingleTra
 def create_journal_entry_from_transaction(single_tx):
     """
     Creates or updates a double-entry JournalEntry from a single Transaction.
+    Unified Logic:
+    Positive amount = Money IN (Debit Cash, Credit Category)
+    Negative amount = Money OUT (Credit Cash, Debit Category)
     """
     with transaction.atomic():
         if single_tx.journal_entry:
@@ -21,23 +24,17 @@ def create_journal_entry_from_transaction(single_tx):
                 description=single_tx.description
             )
 
-        # Determine debit/credit based on account types
+        # Determine debit/credit based on amount sign
         abs_amount = abs(single_tx.amount)
 
-        if single_tx.category.account_type == 'INCOME':
-            if single_tx.amount >= 0:
-                debit_account = single_tx.payment_account
-                credit_account = single_tx.category
-            else:
-                debit_account = single_tx.category
-                credit_account = single_tx.payment_account
-        else: # EXPENSE
-            if single_tx.amount >= 0:
-                debit_account = single_tx.category
-                credit_account = single_tx.payment_account
-            else:
-                debit_account = single_tx.payment_account
-                credit_account = single_tx.category
+        if single_tx.amount >= 0:
+            # Money IN
+            debit_account = single_tx.payment_account
+            credit_account = single_tx.category
+        else:
+            # Money OUT
+            debit_account = single_tx.category
+            credit_account = single_tx.payment_account
 
         # Link to the appropriate AccountingClass
         acc_class = None
@@ -100,30 +97,31 @@ def setup_standard_accounts(company):
     Seeds a standard Chart of Accounts for a new company.
     """
     accounts = [
-        # Assets (1000s)
-        ('1000', 'Cash', 'ASSET', 'Main checking account'),
-        ('1100', 'Accounts Receivable', 'ASSET', 'Unpaid rent'),
-        ('1500', 'Rental Property', 'ASSET', 'Building value'),
+        # Assets (10000s)
+        ('10000', 'Cash', 'ASSET', 'Main checking account'),
+        ('11000', 'Accounts Receivable', 'ASSET', 'Unpaid rent'),
+        ('15000', 'Rental Property', 'ASSET', 'Building value'),
 
-        # Liabilities (2000s)
-        ('2000', 'Accounts Payable', 'LIABILITY', 'Unpaid bills'),
-        ('2100', 'Security Deposits', 'LIABILITY', 'Tenant deposits held'),
-        ('2500', 'Mortgage Payable', 'LIABILITY', 'Loan balance'),
+        # Liabilities (20000s)
+        ('20000', 'Accounts Payable', 'LIABILITY', 'Unpaid bills'),
+        ('21000', 'Security Deposits', 'LIABILITY', 'Tenant deposits held'),
+        ('25000', 'Mortgage Payable', 'LIABILITY', 'Loan balance'),
 
-        # Equity (3000s)
-        ('3000', 'Owner Investment', 'EQUITY', 'Initial capital'),
-        ('3900', 'Retained Earnings', 'EQUITY', 'Accumulated profit'),
+        # Equity (30000s)
+        ('30000', 'Owner Investment', 'EQUITY', 'Initial capital'),
+        ('30100', 'Owner Draw', 'EQUITY', 'Personal withdrawals'),
+        ('39000', 'Retained Earnings', 'EQUITY', 'Accumulated profit'),
 
-        # Income (4000s)
-        ('4000', 'Rental Income', 'INCOME', 'Monthly rent'),
-        ('4100', 'Late Fees', 'INCOME', 'Late payment penalties'),
+        # Income (40000s)
+        ('40000', 'Rental Income', 'INCOME', 'Monthly rent'),
+        ('41000', 'Late Fees', 'INCOME', 'Late payment penalties'),
 
-        # Expenses (5000s)
-        ('5000', 'Repairs & Maintenance', 'EXPENSE', 'Fixing things'),
-        ('5100', 'Property Taxes', 'EXPENSE', 'Annual taxes'),
-        ('5200', 'Insurance', 'EXPENSE', 'Property insurance'),
-        ('5300', 'Management Fees', 'EXPENSE', 'Property manager costs'),
-        ('PM-CLR', 'PM Clearing', 'ASSET', 'Clearing account for property manager imports'),
+        # Expenses (50000s)
+        ('50000', 'Repairs & Maintenance', 'EXPENSE', 'Fixing things'),
+        ('51000', 'Property Taxes', 'EXPENSE', 'Annual taxes'),
+        ('52000', 'Insurance', 'EXPENSE', 'Property insurance'),
+        ('53000', 'Management Fees', 'EXPENSE', 'Property manager costs'),
+        ('PMCLR', 'PM Clearing', 'ASSET', 'Clearing account for property manager imports'),
     ]
 
     for code, name, acc_type, desc in accounts:
