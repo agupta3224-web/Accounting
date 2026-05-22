@@ -105,3 +105,29 @@ class AccountingTest(TestCase):
         self.assertTrue(Account.objects.filter(name="Checking", company=company).exists())
         self.assertTrue(Account.objects.filter(name="Utilities", company=company).exists())
         self.assertTrue(Account.objects.filter(name="Electricity", company=company, parent__name="Utilities").exists())
+
+    def test_import_iif_coa_duplicate_code(self):
+        company = Company.objects.create(name="IIF Duplicate Test Co")
+        # Create an account with code 1000
+        Account.objects.create(name="Old Cash", code="1000", account_type="ASSET", company=company)
+
+        # IIF has "New Cash" with code 1000
+        iif_content = (
+            "!ACCNT\tNAME\tACCNTTYPE\tACCNUM\n"
+            "ACCNT\tNew Cash\tBANK\t1000\n"
+        )
+        iif_file = SimpleUploadedFile("test.iif", iif_content.encode('utf-8'))
+
+        # Set active company in session
+        session = self.client.session
+        session['active_company_id'] = company.id
+        session.save()
+
+        # This currently fails with UNIQUE constraint error
+        response = self.client.post(reverse('import_coa_iif'), {'file': iif_file})
+        self.assertEqual(response.status_code, 302)
+
+        # Should have updated the name or at least not crashed
+        # Depending on how we decide to handle it.
+        # Usually if code matches, it's the same account renamed.
+        self.assertTrue(Account.objects.filter(code="1000", name="New Cash", company=company).exists())

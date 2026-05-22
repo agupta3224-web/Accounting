@@ -113,7 +113,8 @@ def import_iif_coa(file_obj, company_id):
             continue
 
         if parts[0] == 'ACCNT':
-            data = dict(zip(headers, parts[1:]))
+            # Create a dict of data, stripping quotes from values
+            data = {k: v.strip('"') for k, v in zip(headers, parts[1:])}
             full_name = data.get('NAME')
             qb_type = data.get('ACCNTTYPE')
             code = data.get('ACCNUM')
@@ -132,16 +133,33 @@ def import_iif_coa(file_obj, company_id):
 
                     if is_last:
                         # Final account in the chain
-                        Account.objects.update_or_create(
-                            company_id=company_id,
-                            name=current_name,
-                            parent=parent,
-                            defaults={
-                                'account_type': acc_type,
-                                'code': code if code else None,
-                                'description': desc
-                            }
-                        )
+                        # If code is provided, try to find by code first to avoid UNIQUE constraint
+                        acc = None
+                        if code:
+                            acc = Account.objects.filter(company_id=company_id, code=code).first()
+
+                        if not acc:
+                            # Try to find by name and parent
+                            acc = Account.objects.filter(company_id=company_id, name=current_name, parent=parent).first()
+
+                        if acc:
+                            # Update existing
+                            acc.name = current_name
+                            acc.parent = parent
+                            acc.account_type = acc_type
+                            acc.code = code if code else acc.code
+                            acc.description = desc or acc.description
+                            acc.save()
+                        else:
+                            # Create new
+                            Account.objects.create(
+                                company_id=company_id,
+                                name=current_name,
+                                parent=parent,
+                                account_type=acc_type,
+                                code=code if code else None,
+                                description=desc
+                            )
                         accounts_imported += 1
                     else:
                         # Parent account
