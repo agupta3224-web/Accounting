@@ -12,12 +12,7 @@
                 {% for field in form %}
                     <div class="mb-3">
                         <label class="form-label">{{ field.label }}</label>
-                        <div class="input-group">
-                            {{ field }}
-                            {% if field.name == 'category' %}
-                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
-                            {% endif %}
-                        </div>
+                        {{ field }}
                         {% if field.errors %}
                             <div class="text-danger small">{{ field.errors }}</div>
                         {% endif %}
@@ -42,8 +37,12 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
+                    <label class="form-label">Category Number / Code</label>
+                    <input type="text" id="new_cat_code" class="form-control" placeholder="e.g. 4000">
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Category Name</label>
-                    <input type="text" id="new_cat_name" class="form-control">
+                    <input type="text" id="new_cat_name" class="form-control" placeholder="e.g. Rental Income">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type</label>
@@ -62,13 +61,31 @@
 </div>
 
 <script>
-    document.querySelectorAll('input, select, textarea').forEach(el => {
-        if (el.type !== 'checkbox' && el.type !== 'radio') {
-            el.classList.add('form-control');
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type !== 'checkbox' && el.type !== 'radio') {
+                el.classList.add('form-control');
+            }
+        });
+
+        // Add "Add New..." option to category select
+        const categorySelect = document.querySelector('select[name="category"]');
+        if (categorySelect) {
+            const addNewOption = new Option("--- Add New Category ---", "ADD_NEW");
+            categorySelect.add(addNewOption, categorySelect.options[0]);
+
+            categorySelect.addEventListener('change', function() {
+                if (this.value === 'ADD_NEW') {
+                    const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+                    modal.show();
+                    this.value = ''; // Reset select
+                }
+            });
         }
     });
 
     async function addCategory() {
+        const code = document.getElementById('new_cat_code').value;
         const name = document.getElementById('new_cat_name').value;
         const type = document.getElementById('new_cat_type').value;
         if (!name) return;
@@ -79,7 +96,7 @@
                 'X-CSRFToken': '{{ csrf_token }}',
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}`
+            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}&code=${encodeURIComponent(code)}`
         });
 
         if (response.ok) {
@@ -91,6 +108,7 @@
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
             // Clear inputs
+            document.getElementById('new_cat_code').value = '';
             document.getElementById('new_cat_name').value = '';
         } else {
             alert("Error adding category");

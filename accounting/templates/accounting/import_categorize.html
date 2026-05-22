@@ -29,17 +29,15 @@
                             {{ row.amount }}
                         </td>
                         <td>
-                            <div class="input-group input-group-sm">
-                                <select name="category_{{ forloop.counter0 }}" class="form-select form-select-sm category-select" required>
-                                    <option value="">-- Select Category --</option>
-                                    {% for acc in accounts %}
-                                        <option value="{{ acc.id }}" {% if row.suggested_cat == acc.id %}selected{% endif %}>
-                                            {{ acc.name }} ({{ acc.account_type }})
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+</button>
-                            </div>
+                            <select name="category_{{ forloop.counter0 }}" class="form-select form-select-sm category-select" required>
+                                <option value="">-- Select Category --</option>
+                                <option value="ADD_NEW">--- Add New Category ---</option>
+                                {% for acc in accounts %}
+                                    <option value="{{ acc.id }}" {% if row.suggested_cat == acc.id %}selected{% endif %}>
+                                        {{ acc }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                         </td>
                         <td class="text-center">
                             <input type="checkbox" name="rule_{{ forloop.counter0 }}" class="form-check-input">
@@ -67,8 +65,12 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
+                    <label class="form-label">Category Number / Code</label>
+                    <input type="text" id="new_cat_code" class="form-control" placeholder="e.g. 4000">
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Category Name</label>
-                    <input type="text" id="new_cat_name" class="form-control">
+                    <input type="text" id="new_cat_name" class="form-control" placeholder="e.g. Rental Income">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type</label>
@@ -87,7 +89,18 @@
 </div>
 
 <script>
+    document.querySelectorAll('.category-select').forEach(select => {
+        select.addEventListener('change', function() {
+            if (this.value === 'ADD_NEW') {
+                const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+                modal.show();
+                this.dataset.lastSelect = 'true'; // Mark which select triggered the modal
+            }
+        });
+    });
+
     async function addCategory() {
+        const code = document.getElementById('new_cat_code').value;
         const name = document.getElementById('new_cat_name').value;
         const type = document.getElementById('new_cat_type').value;
         if (!name) return;
@@ -98,7 +111,7 @@
                 'X-CSRFToken': '{{ csrf_token }}',
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}`
+            body: `name=${encodeURIComponent(name)}&account_type=${encodeURIComponent(type)}&code=${encodeURIComponent(code)}`
         });
 
         if (response.ok) {
@@ -107,15 +120,30 @@
             document.querySelectorAll('.category-select').forEach(select => {
                 const option = new Option(data.name, data.id);
                 select.add(option);
+                if (select.dataset.lastSelect === 'true') {
+                    select.value = data.id;
+                    delete select.dataset.lastSelect;
+                }
             });
 
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
             // Clear inputs
+            document.getElementById('new_cat_code').value = '';
             document.getElementById('new_cat_name').value = '';
         } else {
             alert("Error adding category");
         }
     }
+
+    // Reset lastSelect when modal is closed without adding
+    document.getElementById('addCategoryModal').addEventListener('hidden.bs.modal', function () {
+        document.querySelectorAll('.category-select').forEach(select => {
+            if (select.dataset.lastSelect === 'true') {
+                select.value = '';
+                delete select.dataset.lastSelect;
+            }
+        });
+    });
 </script>
 {% endblock %}

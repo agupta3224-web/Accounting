@@ -356,13 +356,18 @@ def add_account_ajax(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         type = request.POST.get('account_type')
+        code = request.POST.get('code')
         if name and type:
-            acc = Account.objects.create(
-                company_id=company_id,
-                name=name,
-                account_type=type
-            )
-            return JsonResponse({'id': acc.id, 'name': str(acc)})
+            try:
+                acc = Account.objects.create(
+                    company_id=company_id,
+                    name=name,
+                    account_type=type,
+                    code=code
+                )
+                return JsonResponse({'id': acc.id, 'name': str(acc)})
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid data'}, status=400)
 
 def profit_and_loss(request):
