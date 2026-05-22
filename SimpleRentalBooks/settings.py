@@ -49,6 +49,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounting.middleware.CompanyDatabaseMiddleware",
     "accounting.middleware.SubscriptionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -78,12 +79,20 @@ WSGI_APPLICATION = "SimpleRentalBooks.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# We use a master database to store company metadata and subscription info
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "db.sqlite3",
+        "NAME": BASE_DIR / "data" / "master.sqlite3",
+    },
+    "company_template": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "data" / "template.sqlite3",
     }
 }
+
+# This will be dynamically updated by middleware
+DATABASE_ROUTERS = ['accounting.router.CompanyRouter']
 
 
 # Password validation

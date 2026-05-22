@@ -17,6 +17,9 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from accounting.backup_service import start_backup_thread
+
+start_backup_thread()
 
 urlpatterns = [
     path("admin/", admin.site.urls),

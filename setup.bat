@@ -34,7 +34,52 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: 4. Run Migrations
+:: 4. Prompt for Installation Directory
+set "INSTALL_DIR=C:\Program Files\SimpleRentalBooks"
+echo Current location: %CD%
+set /p "USER_DIR=Enter installation directory [%INSTALL_DIR%]: "
+if not "%USER_DIR%"=="" set "INSTALL_DIR=%USER_DIR%"
+
+echo.
+echo Target installation: %INSTALL_DIR%
+echo.
+
+:: 5. Reinstall logic (Copy files to target directory)
+if /i "%CD%"=="%INSTALL_DIR%" goto skip_copy
+
+echo [1.5/3] Installing/Updating files to %INSTALL_DIR%...
+
+:: Backup existing data from target if it exists
+if exist "%INSTALL_DIR%\data" (
+    echo Backing up existing data from target...
+    if not exist "%TEMP%\SRB_Backup" mkdir "%TEMP%\SRB_Backup"
+    xcopy /E /I /Y "%INSTALL_DIR%\data" "%TEMP%\SRB_Backup"
+)
+
+:: Create target directory
+if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+
+:: Copy project files (excluding venv, data, and .git)
+xcopy /E /I /Y /EXCLUDE:exclude_list.txt . "%INSTALL_DIR%"
+
+:: Restore data to target
+if exist "%TEMP%\SRB_Backup" (
+    echo Restoring data to target...
+    if not exist "%INSTALL_DIR%\data" mkdir "%INSTALL_DIR%"
+    xcopy /E /I /Y "%TEMP%\SRB_Backup" "%INSTALL_DIR%\data"
+    rd /S /Q "%TEMP%\SRB_Backup"
+)
+
+echo.
+echo Reinstallation complete. Please run setup.bat again FROM the new directory:
+echo %INSTALL_DIR%
+echo.
+pause
+exit /b 0
+
+:skip_copy
+
+:: 6. Setup/Update Database
 echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data

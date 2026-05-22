@@ -15,11 +15,31 @@ def company_list(request):
     companies = Company.objects.all()
     return render(request, 'accounting/company_list.html', {'companies': companies})
 
+import shutil
+from django.conf import settings
+
 def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         if form.is_valid():
             company = form.save()
+
+            # Create a separate DB file for this company
+            db_name = f"company_{company.id}.sqlite3"
+            db_path = settings.BASE_DIR / "data" / db_name
+            template_path = settings.BASE_DIR / "data" / "template.sqlite3"
+
+            shutil.copy2(template_path, db_path)
+
+            # Register new DB in settings at runtime for this session
+            # (In production, you'd use a more robust way to manage DB connections)
+            settings.DATABASES[f"company_{company.id}"] = {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': db_path,
+            }
+
+            # Note: The request middleware will handle switching to this DB
+            # but for the first setup we need to pass it explicitly if needed
             setup_standard_accounts(company)
             return redirect('company_list')
     else:
