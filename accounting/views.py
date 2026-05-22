@@ -8,7 +8,7 @@ from decimal import Decimal
 from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
-from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date
+from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa
 from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
 
 def company_list(request):
@@ -539,6 +539,34 @@ def edit_account(request, pk):
     else:
         form = AccountForm(instance=account, company_id=company_id)
     return render(request, 'accounting/generic_form.html', {'form': form, 'title': f'Edit Account: {account.name}'})
+
+def delete_account(request, pk):
+    company_id = request.session.get('active_company_id')
+    account = get_object_or_404(Account, pk=pk, company_id=company_id)
+
+    # Check if used in transactions or journal items
+    if JournalItem.objects.filter(account=account).exists() or Transaction.objects.filter(Q(category=account) | Q(payment_account=account)).exists():
+        messages.error(request, f"Cannot delete account '{account.name}' because it has transactions associated with it.")
+    else:
+        account.delete()
+        messages.success(request, f"Account '{account.name}' deleted successfully.")
+
+    return redirect('coa_list')
+
+def import_coa_iif(request):
+    company_id = request.session.get('active_company_id')
+    if request.method == 'POST':
+        if 'file' in request.FILES:
+            try:
+                count = import_iif_coa(request.FILES['file'], company_id)
+                messages.success(request, f"Successfully imported {count} accounts from IIF.")
+                return redirect('coa_list')
+            except Exception as e:
+                messages.error(request, f"Error importing IIF: {str(e)}")
+        else:
+            messages.error(request, "No file uploaded.")
+
+    return render(request, 'accounting/import_coa.html', {'title': 'Import Chart of Accounts (IIF)'})
 
 def add_llc(request):
     company_id = request.session.get('active_company_id')

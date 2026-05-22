@@ -1,7 +1,9 @@
+import io
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from .models import LLC, Property, Account, Transaction
+from django.core.files.uploadedfile import SimpleUploadedFile
+from .models import LLC, Property, Account, Transaction, JournalItem, Company
 from .services import create_journal_entry_from_transaction
 
 class AccountingTest(TestCase):
@@ -51,3 +53,55 @@ class AccountingTest(TestCase):
         response = self.client.post(reverse('add_transaction'), data)
         self.assertEqual(response.status_code, 302) # Redirect
         self.assertEqual(Transaction.objects.filter(description='Repair sink').count(), 1)
+
+    def test_delete_account(self):
+        # Create a fresh company to avoid context issues
+        company = Company.objects.create(name="Delete Test Co")
+        acc = Account.objects.create(name="Delete Me", account_type="EXPENSE", company=company)
+
+        # Set active company in session
+        session = self.client.session
+        session['active_company_id'] = company.id
+        session.save()
+
+        # Delete should succeed
+        response = self.client.post(reverse('delete_account', args=[acc.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Account.objects.filter(id=acc.id).exists())
+
+        # Now try to delete an account WITH transactions
+        acc2 = Account.objects.create(name="Dont Delete Me", account_type="EXPENSE", company=company)
+        bank = Account.objects.create(name="Bank", account_type="ASSET", company=company)
+        tx = Transaction.objects.create(
+            date="2024-05-18",
+            description="Used",
+            amount=100,
+            category=acc2,
+            payment_account=bank,
+            company=company
+        )
+
+        response = self.client.post(reverse('delete_account', args=[acc2.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Account.objects.filter(id=acc2.id).exists())
+
+    def test_import_iif_coa(self):
+        company = Company.objects.create(name="IIF Test Co")
+        session = self.client.session
+        session['active_company_id'] = company.id
+        session.save()
+
+        iif_content = (
+            "!ACCNT\tNAME\tACCNTTYPE\tACCNUM\tDESC\n"
+            "ACCNT\tChecking\tBANK\t1000\tOperating Account\n"
+            "ACCNT\tUtilities:Electricity\tEXP\t6000\tElectric bill\n"
+        )
+        iif_file = SimpleUploadedFile("test.iif", iif_content.encode('utf-8'))
+
+        response = self.client.post(reverse('import_coa_iif'), {'file': iif_file})
+        self.assertEqual(response.status_code, 302)
+
+        # Verify accounts created
+        self.assertTrue(Account.objects.filter(name="Checking", company=company).exists())
+        self.assertTrue(Account.objects.filter(name="Utilities", company=company).exists())
+        self.assertTrue(Account.objects.filter(name="Electricity", company=company, parent__name="Utilities").exists())

@@ -1,0 +1,30 @@
+{% extends 'accounting/base.html' %}
+
+{% block title %}{{ title }} - SimpleRentalBooks{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h1 class="h3 mb-4">{{ title }}</h1>
+
+            <div class="alert alert-info">
+                Please upload a QuickBooks <strong>.IIF</strong> file. The system will import accounts from the <code>!ACCNT</code> section.
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="file" class="form-label">Select IIF File</label>
+                    <input type="file" name="file" id="file" class="form-control" accept=".iif" required>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'coa_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Import Accounts</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

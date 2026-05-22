@@ -75,6 +75,84 @@ def parse_csv_preview(file_obj):
         rows.append(row)
     return rows
 
+def import_iif_coa(file_obj, company_id):
+    """
+    Import Chart of Accounts from QuickBooks IIF file (tab-delimited).
+    """
+    decoded_file = file_obj.read().decode('utf-8-sig')
+    lines = decoded_file.splitlines()
+
+    # Mapping QB types to our types
+    TYPE_MAP = {
+        'BANK': 'ASSET',
+        'AR': 'ASSET',
+        'OCASSET': 'ASSET',
+        'FIXASSET': 'ASSET',
+        'OASSET': 'ASSET',
+        'AP': 'LIABILITY',
+        'CCARD': 'LIABILITY',
+        'OCLIAB': 'LIABILITY',
+        'LLIAB': 'LIABILITY',
+        'EQUITY': 'EQUITY',
+        'INC': 'INCOME',
+        'EXP': 'EXPENSE',
+        'EXINC': 'INCOME',
+        'EXEXP': 'EXPENSE',
+    }
+
+    headers = []
+    accounts_imported = 0
+
+    for line in lines:
+        if not line.strip():
+            continue
+
+        parts = line.split('\t')
+        if parts[0] == '!ACCNT':
+            headers = [p.upper() for p in parts[1:]]
+            continue
+
+        if parts[0] == 'ACCNT':
+            data = dict(zip(headers, parts[1:]))
+            full_name = data.get('NAME')
+            qb_type = data.get('ACCNTTYPE')
+            code = data.get('ACCNUM')
+            desc = data.get('DESC', '')
+
+            if full_name and qb_type:
+                acc_type = TYPE_MAP.get(qb_type, 'EXPENSE')
+
+                # Handle hierarchical names (e.g. "Income:Rental Income")
+                name_parts = full_name.split(':')
+                parent = None
+
+                for i, part in enumerate(name_parts):
+                    current_name = part.strip()
+                    is_last = (i == len(name_parts) - 1)
+
+                    if is_last:
+                        # Final account in the chain
+                        Account.objects.update_or_create(
+                            company_id=company_id,
+                            name=current_name,
+                            parent=parent,
+                            defaults={
+                                'account_type': acc_type,
+                                'code': code if code else None,
+                                'description': desc
+                            }
+                        )
+                        accounts_imported += 1
+                    else:
+                        # Parent account
+                        parent, _ = Account.objects.get_or_create(
+                            company_id=company_id,
+                            name=current_name,
+                            parent=parent,
+                            defaults={'account_type': acc_type}
+                        )
+    return accounts_imported
+
 def import_excel_property_manager(file_obj, company_id=None):
     """
     Import transactions from Excel based on specific PM mapping:
