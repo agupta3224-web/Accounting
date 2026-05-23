@@ -8,6 +8,9 @@ def set_active_db(db_alias):
 def get_active_db():
     return getattr(_thread_locals, 'active_db', 'default')
 
+def set_active_db(db_alias):
+    _thread_locals.active_db = db_alias
+
 class CompanyRouter:
     """
     A router to control all database operations.

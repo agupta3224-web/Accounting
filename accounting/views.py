@@ -26,8 +26,8 @@ def add_company(request):
 
             # Create a separate DB file for this company
             db_name = f"company_{company.id}.sqlite3"
-            db_path = settings.BASE_DIR / "data" / db_name
-            template_path = settings.BASE_DIR / "data" / "template.sqlite3"
+            db_path = (settings.BASE_DIR / "data" / db_name).resolve()
+            template_path = (settings.BASE_DIR / "data" / "template.sqlite3").resolve()
 
             shutil.copy2(template_path, db_path)
 
@@ -38,9 +38,12 @@ def add_company(request):
                 'NAME': db_path,
             }
 
-            # Note: The request middleware will handle switching to this DB
-            # but for the first setup we need to pass it explicitly if needed
+            # Explicitly set the active DB context for seeding the new company
+            from .router import set_active_db
+            set_active_db(db_alias)
             setup_standard_accounts(company)
+            set_active_db('default')
+
             return redirect('company_list')
     else:
         form = CompanyForm()

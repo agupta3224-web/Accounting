@@ -86,14 +86,15 @@ WSGI_APPLICATION = "SimpleRentalBooks.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 # We use a master database to store company metadata and subscription info
+# Use absolute resolved paths to avoid 'unable to open database' on some Windows setups
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "master.sqlite3",
+        "NAME": (BASE_DIR / "data" / "master.sqlite3").resolve(),
     },
     "company_template": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "template.sqlite3",
+        "NAME": (BASE_DIR / "data" / "template.sqlite3").resolve(),
     }
 }
 

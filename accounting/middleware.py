@@ -18,7 +18,7 @@ class CompanyDatabaseMiddleware:
         if active_id:
             db_alias = f"company_{active_id}"
             if db_alias not in settings.DATABASES:
-                db_path = settings.BASE_DIR / "data" / f"{db_alias}.sqlite3"
+                db_path = (settings.BASE_DIR / "data" / f"{db_alias}.sqlite3").resolve()
                 if db_path.exists():
                     settings.DATABASES[db_alias] = {
                         'ENGINE': 'django.db.backends.sqlite3',
