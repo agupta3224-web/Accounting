@@ -34,70 +34,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: 4. Prompt for Installation Directory
-set "INSTALL_DIR=%USERPROFILE%\SimpleRentalBooks"
-echo Current location: %CD%
-echo.
-echo Recommended location: %INSTALL_DIR%
-echo (Installing to C:\ or C:\Program Files may require 'Run as Administrator')
-echo.
-set /p "USER_DIR=Enter installation directory [%INSTALL_DIR%]: "
-if not "%USER_DIR%"=="" set "INSTALL_DIR=%USER_DIR%"
-
-echo.
-echo Target installation: %INSTALL_DIR%
-echo.
-
-:: 5. Reinstall logic (Copy files to target directory)
-if /i "%CD%"=="%INSTALL_DIR%" goto skip_copy
-
-:: Check permissions
-mkdir "%INSTALL_DIR%" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo.
-    echo ERROR: Access Denied to %INSTALL_DIR%
-    echo --------------------------------------------------
-    echo Please right-click setup.bat and select 'Run as Administrator'
-    echo OR choose a different folder (e.g., C:\SimpleRentalBooks)
-    echo --------------------------------------------------
-    echo.
-    pause
-    exit /b 1
-)
-
-echo [1.5/3] Installing/Updating files to %INSTALL_DIR%...
-
-:: Backup existing data from target if it exists
-if exist "%INSTALL_DIR%\data" (
-    echo Backing up existing data from target...
-    if not exist "%TEMP%\SRB_Backup" mkdir "%TEMP%\SRB_Backup"
-    xcopy /E /I /Y "%INSTALL_DIR%\data" "%TEMP%\SRB_Backup"
-)
-
-:: Create target directory
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-
-:: Copy project files (excluding venv, data, and .git)
-xcopy /E /I /Y /EXCLUDE:exclude_list.txt . "%INSTALL_DIR%"
-
-:: Restore data to target
-if exist "%TEMP%\SRB_Backup" (
-    echo Restoring data to target...
-    if not exist "%INSTALL_DIR%\data" mkdir "%INSTALL_DIR%"
-    xcopy /E /I /Y "%TEMP%\SRB_Backup" "%INSTALL_DIR%\data"
-    rd /S /Q "%TEMP%\SRB_Backup"
-)
-
-echo.
-echo Reinstallation complete. Please run setup.bat again FROM the new directory:
-echo %INSTALL_DIR%
-echo.
-pause
-exit /b 0
-
-:skip_copy
-
-:: 6. Setup/Update Database
+:: 4. Setup/Update Database
 echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data
@@ -122,6 +59,7 @@ venv\Scripts\python.exe manage.py makemigrations accounting
 :: Run migrations (creates the tables)
 :: Use --fake-initial to handle cases where tables already exist from previous manual setups
 venv\Scripts\python.exe manage.py migrate --fake-initial
+venv\Scripts\python.exe manage.py migrate --database=company_template --fake-initial
 if %errorlevel% neq 0 (
     echo ERROR: Database migration failed.
     pause

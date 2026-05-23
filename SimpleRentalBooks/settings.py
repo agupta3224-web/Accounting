@@ -16,7 +16,13 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Ensure the data directory exists for the database
-(BASE_DIR / "data").mkdir(parents=True, exist_ok=True)
+data_dir = BASE_DIR / "data"
+if not data_dir.exists():
+    import os
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+    except:
+        pass # Handle potential permission errors gracefully at this stage
 
 
 # Quick-start development settings - unsuitable for production
