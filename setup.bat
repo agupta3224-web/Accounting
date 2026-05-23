@@ -102,11 +102,17 @@ echo [3/3] Setting up the database...
 :: Ensure data directory exists
 if not exist data mkdir data
 
-:: Auto-migrate old database if it exists in the root
+:: Handle legacy database migration to multi-db master
 if exist db.sqlite3 (
-    if not exist data\db.sqlite3 (
-        echo Found old database, moving it to 'data' folder...
-        move db.sqlite3 data\
+    if not exist data\master.sqlite3 (
+        echo Found legacy single-database, migrating to master...
+        move db.sqlite3 data\master.sqlite3
+    )
+)
+if exist data\db.sqlite3 (
+    if not exist data\master.sqlite3 (
+        echo Found old database in data folder, migrating to master...
+        move data\db.sqlite3 data\master.sqlite3
     )
 )
 

@@ -11,6 +11,9 @@ class CompanyDatabaseMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Always start request in the default (master) database context
+        set_active_db('default')
+
         active_id = request.session.get('active_company_id')
         if active_id:
             db_alias = f"company_{active_id}"

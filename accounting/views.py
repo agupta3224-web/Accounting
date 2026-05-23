@@ -83,68 +83,24 @@ def copy_company(request):
             with transaction.atomic():
                 new_company = Company.objects.create(name=new_name)
 
-                # Copy Accounts
-                accounts = Account.objects.filter(company=source_company)
-                acc_mapping = {} # old_id -> new_obj
-                for acc in accounts:
-                    old_id = acc.id
-                    acc.pk = None
-                    acc.company = new_company
-                    acc.save()
-                    acc_mapping[old_id] = acc
+                # Setup DB file for new company
+                db_name = f"company_{new_company.id}.sqlite3"
+                db_path = settings.BASE_DIR / "data" / db_name
+                source_db_path = settings.BASE_DIR / "data" / f"company_{source_company.id}.sqlite3"
 
-                # Fix Account parents
-                for old_id, new_acc in acc_mapping.items():
-                    old_acc = Account.objects.get(id=old_id)
-                    if old_acc.parent_id:
-                        new_acc.parent = acc_mapping.get(old_acc.parent_id)
-                        new_acc.save()
+                if source_db_path.exists():
+                    shutil.copy2(source_db_path, db_path)
+                else:
+                    template_path = settings.BASE_DIR / "data" / "template.sqlite3"
+                    shutil.copy2(template_path, db_path)
 
-                # Copy Classes
-                classes = AccountingClass.objects.filter(company=source_company)
-                class_mapping = {}
-                for cls in classes:
-                    old_id = cls.id
-                    cls.pk = None
-                    cls.company = new_company
-                    cls.save()
-                    class_mapping[old_id] = cls
-
-                # Fix Class parents
-                for old_id, new_cls in class_mapping.items():
-                    old_cls = AccountingClass.objects.get(id=old_id)
-                    if old_cls.parent_id:
-                        new_cls.parent = class_mapping.get(old_cls.parent_id)
-                        new_cls.save()
-
-                # Copy LLCs
-                llcs = LLC.objects.filter(company=source_company)
-                llc_mapping = {}
-                for llc in llcs:
-                    old_id = llc.id
-                    old_class_id = llc.accounting_class_id
-                    llc.pk = None
-                    llc.company = new_company
-                    llc.accounting_class = class_mapping.get(old_class_id)
-                    llc.save()
-                    llc_mapping[old_id] = llc
-
-                # Copy Properties
-                props = Property.objects.filter(llc__company=source_company)
-                for prop in props:
-                    old_llc_id = prop.llc_id
-                    old_class_id = prop.accounting_class_id
-                    prop.pk = None
-                    prop.llc = llc_mapping.get(old_llc_id)
-                    prop.accounting_class = class_mapping.get(old_class_id)
-                    prop.save()
-
-                # Copy Vendors
-                vendors = Vendor.objects.filter(company=source_company)
-                for v in vendors:
-                    v.pk = None
-                    v.company = new_company
-                    v.save()
+                # Register and initialize the new DB context
+                settings.DATABASES[f"company_{new_company.id}"] = {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': db_path,
+                    'ATOMIC_REQUESTS': False,
+                    'AUTOCOMMIT': True,
+                }
 
                 messages.success(request, f"Company '{source_company.name}' copied to '{new_company.name}' successfully.")
                 request.session['active_company_id'] = new_company.id
@@ -162,24 +118,17 @@ def backup_company(request):
         return redirect('company_list')
 
     company = get_object_or_404(Company, id=active_id)
+    db_path = settings.BASE_DIR / "data" / f"company_{company.id}.sqlite3"
 
-    # Collect all related data
-    data = []
-    data.extend(Account.objects.filter(company=company))
-    data.extend(AccountingClass.objects.filter(company=company))
-    data.extend(LLC.objects.filter(company=company))
-    data.extend(Property.objects.filter(llc__company=company))
-    data.extend(Vendor.objects.filter(company=company))
-    data.extend(JournalEntry.objects.filter(company=company))
-    data.extend(JournalItem.objects.filter(entry__company=company))
-    data.extend(Transaction.objects.filter(company=company))
+    if not db_path.exists():
+        messages.error(request, "Database file not found.")
+        return redirect('dashboard')
 
-    serialized_data = serializers.serialize('json', data)
-
-    filename = f"backup_{company.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    response = HttpResponse(serialized_data, content_type='application/json')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    with open(db_path, 'rb') as f:
+        filename = f"backup_{company.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sqlite3"
+        response = HttpResponse(f.read(), content_type='application/x-sqlite3')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 def dashboard(request):
     company_id = request.session.get('active_company_id')

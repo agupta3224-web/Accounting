@@ -13,8 +13,6 @@ class CompanyRouter:
     A router to control all database operations on models in the
     accounting application.
     """
-    route_app_labels = {'accounting', 'admin', 'auth', 'contenttypes', 'sessions'}
-
     def db_for_read(self, model, **hints):
         if model._meta.app_label == 'accounting':
             if model._meta.model_name in ['company', 'subscription']:
