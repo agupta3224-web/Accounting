@@ -7,7 +7,7 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(AccountingClass)
 class AccountingClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent', 'company')
+    list_display = ('name', 'parent', 'company_id')
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):

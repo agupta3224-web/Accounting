@@ -35,8 +35,12 @@ if %errorlevel% neq 0 (
 )
 
 :: 4. Prompt for Installation Directory
-set "INSTALL_DIR=C:\Program Files\SimpleRentalBooks"
+set "INSTALL_DIR=C:\SimpleRentalBooks"
 echo Current location: %CD%
+echo.
+echo NOTE: Installing to 'C:\Program Files' requires 'Run as Administrator'.
+echo Using 'C:\SimpleRentalBooks' is recommended for easier access.
+echo.
 set /p "USER_DIR=Enter installation directory [%INSTALL_DIR%]: "
 if not "%USER_DIR%"=="" set "INSTALL_DIR=%USER_DIR%"
 
@@ -46,6 +50,20 @@ echo.
 
 :: 5. Reinstall logic (Copy files to target directory)
 if /i "%CD%"=="%INSTALL_DIR%" goto skip_copy
+
+:: Check permissions
+mkdir "%INSTALL_DIR%" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: Access Denied to %INSTALL_DIR%
+    echo --------------------------------------------------
+    echo Please right-click setup.bat and select 'Run as Administrator'
+    echo OR choose a different folder (e.g., C:\SimpleRentalBooks)
+    echo --------------------------------------------------
+    echo.
+    pause
+    exit /b 1
+)
 
 echo [1.5/3] Installing/Updating files to %INSTALL_DIR%...
 

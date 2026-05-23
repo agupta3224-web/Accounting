@@ -19,7 +19,7 @@ def create_journal_entry_from_transaction(single_tx):
             entry.items.all().delete()
         else:
             entry = JournalEntry.objects.create(
-                company=single_tx.company,
+                company_id=single_tx.company_id,
                 date=single_tx.date,
                 description=single_tx.description
             )
@@ -125,7 +125,7 @@ def setup_standard_accounts(company):
     ]
 
     for code, name, acc_type, desc in accounts:
-        Account.objects.get_or_create(company=company, code=code, defaults={
+        Account.objects.get_or_create(company_id=company.id, code=code, defaults={
             'name': name,
             'account_type': acc_type,
             'description': desc

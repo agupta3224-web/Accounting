@@ -1,7 +1,8 @@
 *.pyc
 __pycache__/
 db.sqlite3
-data/
+data/*.sqlite3
+backups/
 venv/
 server.log
 .DS_Store
