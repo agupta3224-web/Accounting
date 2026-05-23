@@ -35,11 +35,11 @@ if %errorlevel% neq 0 (
 )
 
 :: 4. Prompt for Installation Directory
-set "INSTALL_DIR=C:\SimpleRentalBooks"
+set "INSTALL_DIR=%USERPROFILE%\SimpleRentalBooks"
 echo Current location: %CD%
 echo.
-echo NOTE: Installing to 'C:\Program Files' requires 'Run as Administrator'.
-echo Using 'C:\SimpleRentalBooks' is recommended for easier access.
+echo Recommended location: %INSTALL_DIR%
+echo (Installing to C:\ or C:\Program Files may require 'Run as Administrator')
 echo.
 set /p "USER_DIR=Enter installation directory [%INSTALL_DIR%]: "
 if not "%USER_DIR%"=="" set "INSTALL_DIR=%USER_DIR%"

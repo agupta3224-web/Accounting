@@ -95,12 +95,27 @@ def copy_company(request):
                     shutil.copy2(template_path, db_path)
 
                 # Register and initialize the new DB context
-                settings.DATABASES[f"company_{new_company.id}"] = {
+                db_alias = f"company_{new_company.id}"
+                settings.DATABASES[db_alias] = {
                     'ENGINE': 'django.db.backends.sqlite3',
                     'NAME': db_path,
                     'ATOMIC_REQUESTS': False,
                     'AUTOCOMMIT': True,
                 }
+
+                # Update company_id in all tables in the new database
+                from django.db import connections
+                with connections[db_alias].cursor() as cursor:
+                    tables = [
+                        'accounting_account', 'accounting_accountingclass', 'accounting_llc',
+                        'accounting_vendor', 'accounting_journalentry', 'accounting_transaction',
+                        'accounting_importrule'
+                    ]
+                    for table in tables:
+                        try:
+                            cursor.execute(f"UPDATE {table} SET company_id = {new_company.id}")
+                        except:
+                            pass # Table might not exist in this version
 
                 messages.success(request, f"Company '{source_company.name}' copied to '{new_company.name}' successfully.")
                 request.session['active_company_id'] = new_company.id
