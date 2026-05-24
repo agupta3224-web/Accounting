@@ -10,6 +10,7 @@ from .models import Transaction, Property, LLC, JournalItem, Account, JournalEnt
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
 from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa
 from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
+from django.utils.text import slugify
 
 def company_list(request):
     companies = Company.objects.all()
@@ -22,12 +23,14 @@ def add_company(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         if form.is_valid():
-            company = form.save()
+            company = form.save(commit=False)
+            company.db_name = slugify(company.name).replace('-', '_')
+            company.save()
 
             # Create a separate DB file for this company
-            db_alias = f"company_{company.id}"
-            db_name = f"{db_alias}.sqlite3"
-            db_path = (settings.BASE_DIR / "data" / db_name).resolve()
+            db_alias = company.db_name
+            db_filename = f"{db_alias}.sqlite3"
+            db_path = (settings.BASE_DIR / "data" / db_filename).resolve()
             template_path = (settings.BASE_DIR / "data" / "template.sqlite3").resolve()
 
             shutil.copy2(template_path, db_path)
@@ -56,12 +59,12 @@ def select_company(request, pk):
     return redirect('dashboard')
 
 def open_sample_company(request):
-    company, created = Company.objects.get_or_create(name='Sample Company')
+    company, created = Company.objects.get_or_create(name='Sample Company', defaults={'db_name': 'sample_company'})
     if created:
         # Create a separate DB file for the sample company
-        db_alias = f"company_{company.id}"
-        db_name = f"{db_alias}.sqlite3"
-        db_path = (settings.BASE_DIR / "data" / db_name).resolve()
+        db_alias = company.db_name
+        db_filename = f"{db_alias}.sqlite3"
+        db_path = (settings.BASE_DIR / "data" / db_filename).resolve()
 
         if not db_path.exists():
             template_path = (settings.BASE_DIR / "data" / "template.sqlite3").resolve()
@@ -104,12 +107,15 @@ def copy_company(request):
             messages.error(request, "Please provide a name for the new company.")
         else:
             with transaction.atomic():
-                new_company = Company.objects.create(name=new_name)
+                db_alias = slugify(new_name).replace('-', '_')
+                new_company = Company.objects.create(name=new_name, db_name=db_alias)
 
                 # Setup DB file for new company
-                db_name = f"company_{new_company.id}.sqlite3"
-                db_path = settings.BASE_DIR / "data" / db_name
-                source_db_path = settings.BASE_DIR / "data" / f"company_{source_company.id}.sqlite3"
+                db_filename = f"{db_alias}.sqlite3"
+                db_path = settings.BASE_DIR / "data" / db_filename
+
+                source_db_filename = source_company.db_name if source_company.db_name else f"company_{source_company.id}"
+                source_db_path = settings.BASE_DIR / "data" / f"{source_db_filename}.sqlite3"
 
                 if source_db_path.exists():
                     shutil.copy2(source_db_path, db_path)
@@ -118,7 +124,6 @@ def copy_company(request):
                     shutil.copy2(template_path, db_path)
 
                 # Register and initialize the new DB context
-                db_alias = f"company_{new_company.id}"
                 settings.DATABASES[db_alias] = settings.DATABASES['default'].copy()
                 settings.DATABASES[db_alias].update({
                     'NAME': db_path,
@@ -156,7 +161,8 @@ def backup_company(request):
         return redirect('company_list')
 
     company = get_object_or_404(Company, id=active_id)
-    db_path = settings.BASE_DIR / "data" / f"company_{company.id}.sqlite3"
+    db_filename = company.db_name if company.db_name else f"company_{company.id}"
+    db_path = settings.BASE_DIR / "data" / f"{db_filename}.sqlite3"
 
     if not db_path.exists():
         messages.error(request, "Database file not found.")

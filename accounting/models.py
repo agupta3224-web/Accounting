@@ -2,6 +2,7 @@ from django.db import models
 
 class Company(models.Model):
     name = models.CharField(max_length=255)
+    db_name = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

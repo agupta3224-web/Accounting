@@ -2,6 +2,7 @@ from django.http import HttpResponseForbidden
 from django.conf import settings
 from .models import Subscription
 from .router import set_active_db
+from .models import Company
 
 class CompanyDatabaseMiddleware:
     """
@@ -16,9 +17,15 @@ class CompanyDatabaseMiddleware:
 
         active_id = request.session.get('active_company_id')
         if active_id:
-            db_alias = f"company_{active_id}"
+            try:
+                company = Company.objects.get(id=active_id)
+                db_filename = company.db_name if company.db_name else f"company_{active_id}"
+            except Company.DoesNotExist:
+                db_filename = f"company_{active_id}"
+
+            db_alias = db_filename
             if db_alias not in settings.DATABASES:
-                db_path = (settings.BASE_DIR / "data" / f"{db_alias}.sqlite3").resolve()
+                db_path = (settings.BASE_DIR / "data" / f"{db_filename}.sqlite3").resolve()
                 if db_path.exists():
                     # Copy defaults to ensure all required keys like TIME_ZONE are present
                     new_db_config = settings.DATABASES['default'].copy()

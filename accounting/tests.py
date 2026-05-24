@@ -12,9 +12,9 @@ class AccountingTest(TransactionTestCase):
     databases = '__all__'
 
     def setUp(self):
-        self.company = Company.objects.create(name="Test Company")
+        self.company = Company.objects.create(name="Test Company", db_name="test_company")
         # Initialize company DB
-        self.db_alias = f"company_{self.company.id}"
+        self.db_alias = self.company.db_name
         self.db_path = settings.BASE_DIR / "data" / f"{self.db_alias}.sqlite3"
         if not self.db_path.exists():
             shutil.copy2(settings.BASE_DIR / "data" / "template.sqlite3", self.db_path)
