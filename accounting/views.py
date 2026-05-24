@@ -8,7 +8,7 @@ from decimal import Decimal
 from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
-from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa
+from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa, get_company_db_name
 from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
 from django.utils.text import slugify
 
@@ -24,7 +24,7 @@ def add_company(request):
         form = CompanyForm(request.POST)
         if form.is_valid():
             company = form.save(commit=False)
-            company.db_name = slugify(company.name).replace('-', '_')
+            company.db_name = get_company_db_name(company.name)
             company.save()
 
             # Create a separate DB file for this company
@@ -59,7 +59,7 @@ def select_company(request, pk):
     return redirect('dashboard')
 
 def open_sample_company(request):
-    company, created = Company.objects.get_or_create(name='Sample Company', defaults={'db_name': 'sample_company'})
+    company, created = Company.objects.get_or_create(name='Sample Company', defaults={'db_name': get_company_db_name('Sample Company')})
     if created:
         # Create a separate DB file for the sample company
         db_alias = company.db_name
@@ -86,10 +86,38 @@ def open_sample_company(request):
 
 def save_company(request):
     # In a web app with DB persistence, every action is already "saved".
-    # This view provides a visual confirmation for the user.
+    # This view provides a visual confirmation for the user and
+    # synchronizes the database filename with the company name if changed.
     company_id = request.session.get('active_company_id')
     if company_id:
         company = get_object_or_404(Company, id=company_id)
+
+        new_db_name = get_company_db_name(company.name)
+        if company.db_name != new_db_name:
+            old_db_name = company.db_name if company.db_name else f"company_{company.id}"
+            old_path = settings.BASE_DIR / "data" / f"{old_db_name}.sqlite3"
+            new_path = settings.BASE_DIR / "data" / f"{new_db_name}.sqlite3"
+
+            if old_path.exists() and not new_path.exists():
+                # Close all connections to the old database before renaming
+                from django.db import connections
+                if old_db_name in connections:
+                    connections[old_db_name].close()
+
+                try:
+                    shutil.move(old_path, new_path)
+                    company.db_name = new_db_name
+                    company.save()
+
+                    # Update active connection in settings
+                    if old_db_name in settings.DATABASES:
+                        settings.DATABASES[new_db_name] = settings.DATABASES.pop(old_db_name)
+                        settings.DATABASES[new_db_name]['NAME'] = new_path
+
+                    messages.success(request, f"Company database renamed to {new_db_name}.sqlite3")
+                except Exception as e:
+                    messages.error(request, f"Error renaming database file: {str(e)}")
+
         messages.success(request, f"Company '{company.name}' saved successfully.")
     return redirect('dashboard')
 
@@ -107,7 +135,7 @@ def copy_company(request):
             messages.error(request, "Please provide a name for the new company.")
         else:
             with transaction.atomic():
-                db_alias = slugify(new_name).replace('-', '_')
+                db_alias = get_company_db_name(new_name)
                 new_company = Company.objects.create(name=new_name, db_name=db_alias)
 
                 # Setup DB file for new company

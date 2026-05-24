@@ -5,6 +5,13 @@ from datetime import datetime
 from decimal import Decimal
 from .models import Transaction, Property, Account, JournalEntry, JournalItem
 from .services import create_journal_entry_from_transaction
+from django.utils.text import slugify
+
+def get_company_db_name(name):
+    """
+    Generate a filesystem-safe database name from a company name.
+    """
+    return slugify(name).replace('-', '_')
 
 def parse_date(date_str):
     formats = ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y/%m/%d']
