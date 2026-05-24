@@ -1,0 +1,23 @@
+<tr>
+    <td>
+        <div style="padding-left: {{ level|default:0 }}px;">
+            {% if level > 0 %}<span class="text-muted">↳</span>{% endif %}
+            {% if acc.code %}<code>{{ acc.code }}</code> - {% endif %}
+            <strong>{{ acc.name }}</strong>
+        </div>
+    </td>
+    <td><span class="badge bg-secondary">{{ acc.account_type }}</span></td>
+    <td class="text-muted small">{{ acc.description }}</td>
+    <td class="text-end">
+        <a href="{% url 'edit_account' acc.pk %}" class="btn btn-sm btn-link text-decoration-none">Edit</a>
+        <form action="{% url 'delete_account' acc.pk %}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this account?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-link text-danger text-decoration-none">Delete</button>
+        </form>
+    </td>
+</tr>
+{% for sub in acc.sub_accounts.all %}
+    {% with acc=sub level=level|default:0|add:20 %}
+        {% include 'accounting/coa_row.html' %}
+    {% endwith %}
+{% endfor %}

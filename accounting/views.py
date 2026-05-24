@@ -519,7 +519,8 @@ def close_books_view(request):
 
 def chart_of_accounts(request):
     company_id = request.session.get('active_company_id')
-    accounts = Account.objects.filter(company_id=company_id).order_by('code', 'name')
+    # Fetch only top-level accounts; sub-accounts will be rendered recursively in the template
+    accounts = Account.objects.filter(company_id=company_id, parent__isnull=True).order_by('code', 'name')
     return render(request, 'accounting/coa_list.html', {'accounts': accounts})
 
 def add_account(request):

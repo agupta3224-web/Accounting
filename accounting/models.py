@@ -96,7 +96,7 @@ class Account(models.Model):
 
     def __str__(self):
         prefix = f"{self.code} - " if self.code else ""
-        return f"{prefix}{self.name} ({self.account_type})"
+        return f"{prefix}{self.name}"
 
 class JournalEntry(models.Model):
     company_id = models.IntegerField(null=True)
