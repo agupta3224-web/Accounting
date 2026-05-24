@@ -25,7 +25,8 @@ def add_company(request):
             company = form.save()
 
             # Create a separate DB file for this company
-            db_name = f"company_{company.id}.sqlite3"
+            db_alias = f"company_{company.id}"
+            db_name = f"{db_alias}.sqlite3"
             db_path = (settings.BASE_DIR / "data" / db_name).resolve()
             template_path = (settings.BASE_DIR / "data" / "template.sqlite3").resolve()
 
@@ -33,10 +34,10 @@ def add_company(request):
 
             # Register new DB in settings at runtime for this session
             # (In production, you'd use a more robust way to manage DB connections)
-            settings.DATABASES[f"company_{company.id}"] = {
-                'ENGINE': 'django.db.backends.sqlite3',
+            settings.DATABASES[db_alias] = settings.DATABASES['default'].copy()
+            settings.DATABASES[db_alias].update({
                 'NAME': db_path,
-            }
+            })
 
             # Explicitly set the active DB context for seeding the new company
             from .router import set_active_db
@@ -57,7 +58,26 @@ def select_company(request, pk):
 def open_sample_company(request):
     company, created = Company.objects.get_or_create(name='Sample Company')
     if created:
+        # Create a separate DB file for the sample company
+        db_alias = f"company_{company.id}"
+        db_name = f"{db_alias}.sqlite3"
+        db_path = (settings.BASE_DIR / "data" / db_name).resolve()
+
+        if not db_path.exists():
+            template_path = (settings.BASE_DIR / "data" / "template.sqlite3").resolve()
+            shutil.copy2(template_path, db_path)
+
+        # Register and initialize the new DB context
+        settings.DATABASES[db_alias] = settings.DATABASES['default'].copy()
+        settings.DATABASES[db_alias].update({
+            'NAME': db_path,
+        })
+
+        from .router import set_active_db
+        set_active_db(db_alias)
         setup_standard_accounts(company)
+        set_active_db('default')
+
     request.session['active_company_id'] = company.id
     return redirect('dashboard')
 
@@ -99,12 +119,12 @@ def copy_company(request):
 
                 # Register and initialize the new DB context
                 db_alias = f"company_{new_company.id}"
-                settings.DATABASES[db_alias] = {
-                    'ENGINE': 'django.db.backends.sqlite3',
+                settings.DATABASES[db_alias] = settings.DATABASES['default'].copy()
+                settings.DATABASES[db_alias].update({
                     'NAME': db_path,
                     'ATOMIC_REQUESTS': False,
                     'AUTOCOMMIT': True,
-                }
+                })
 
                 # Update company_id in all tables in the new database
                 from django.db import connections

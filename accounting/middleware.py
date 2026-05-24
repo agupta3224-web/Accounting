@@ -20,12 +20,14 @@ class CompanyDatabaseMiddleware:
             if db_alias not in settings.DATABASES:
                 db_path = (settings.BASE_DIR / "data" / f"{db_alias}.sqlite3").resolve()
                 if db_path.exists():
-                    settings.DATABASES[db_alias] = {
-                        'ENGINE': 'django.db.backends.sqlite3',
+                    # Copy defaults to ensure all required keys like TIME_ZONE are present
+                    new_db_config = settings.DATABASES['default'].copy()
+                    new_db_config.update({
                         'NAME': db_path,
                         'ATOMIC_REQUESTS': False,
                         'AUTOCOMMIT': True,
-                    }
+                    })
+                    settings.DATABASES[db_alias] = new_db_config
             set_active_db(db_alias)
         else:
             set_active_db('default')

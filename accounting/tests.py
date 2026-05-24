@@ -9,6 +9,8 @@ from .services import create_journal_entry_from_transaction
 import shutil
 
 class AccountingTest(TransactionTestCase):
+    databases = '__all__'
+
     def setUp(self):
         self.company = Company.objects.create(name="Test Company")
         # Initialize company DB
@@ -17,12 +19,13 @@ class AccountingTest(TransactionTestCase):
         if not self.db_path.exists():
             shutil.copy2(settings.BASE_DIR / "data" / "template.sqlite3", self.db_path)
 
-        settings.DATABASES[self.db_alias] = {
-            'ENGINE': 'django.db.backends.sqlite3',
+        new_config = settings.DATABASES['default'].copy()
+        new_config.update({
             'NAME': self.db_path,
             'ATOMIC_REQUESTS': False,
             'AUTOCOMMIT': True,
-        }
+        })
+        settings.DATABASES[self.db_alias] = new_config
 
         # Set active company in session
         session = self.client.session
