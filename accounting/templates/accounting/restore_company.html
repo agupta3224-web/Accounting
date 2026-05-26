@@ -1,0 +1,63 @@
+{% extends "accounting/base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Select a backup file on your computer to restore as a new company.</p>
+
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Restoring a backup will create a <strong>new</strong> company entry.
+                    If you want to replace an existing company, please rename or delete the old one first.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <h5>Restoration Details</h5>
+                        <hr>
+
+                        <div class="mb-3">
+                            {{ form.backup_file_path.label_tag }}
+                            {{ form.backup_file_path }}
+                            {% if form.backup_file_path.help_text %}
+                                <div class="form-text">{{ form.backup_file_path.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.restore_as_name.label_tag }}
+                            {{ form.restore_as_name }}
+                            {% if form.restore_as_name.help_text %}
+                                <div class="form-text">{{ form.restore_as_name.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Restore Company</button>
+                        <a href="{% url 'company_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 card">
+            <div class="card-body">
+                <h6><i class="bi bi-info-circle"></i> Instructions</h6>
+                <ol class="small text-muted mb-0">
+                    <li>Locate your `.sqlite3` backup file on your computer.</li>
+                    <li>Copy the full path to that file and paste it into the "Source Backup File" box above.</li>
+                    <li>Give your restored company a clear name.</li>
+                    <li>Click "Restore Company" to finalize the process.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

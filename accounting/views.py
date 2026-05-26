@@ -9,7 +9,7 @@ from datetime import datetime
 from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule, GlobalSetting
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
 from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa, get_company_db_name
-from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm, GlobalSettingForm
+from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm, GlobalSettingForm, RestoreForm
 from django.utils.text import slugify
 
 def company_list(request):
@@ -809,4 +809,42 @@ def settings_view(request):
     return render(request, 'accounting/settings.html', {
         'form': form,
         'title': 'Global Settings'
+    })
+
+def restore_company(request):
+    if request.method == 'POST':
+        form = RestoreForm(request.POST)
+        if form.is_valid():
+            backup_file_path = Path(form.cleaned_data['backup_file_path'])
+            restore_as_name = form.cleaned_data['restore_as_name']
+
+            if not backup_file_path.exists():
+                messages.error(request, f"Backup file not found at: {backup_file_path}")
+            elif not backup_file_path.is_file():
+                messages.error(request, f"The path provided is not a file: {backup_file_path}")
+            else:
+                try:
+                    db_alias = get_company_db_name(restore_as_name)
+                    db_filename = f"{db_alias}.sqlite3"
+                    dest_path = settings.BASE_DIR / "data" / db_filename
+
+                    if dest_path.exists():
+                        messages.error(request, f"A database named {db_filename} already exists. Please choose a different company name.")
+                    else:
+                        # Copy the backup file
+                        shutil.copy2(backup_file_path, dest_path)
+
+                        # Create Company record
+                        Company.objects.create(name=restore_as_name, db_name=db_alias)
+
+                        messages.success(request, f"Company '{restore_as_name}' successfully restored from backup.")
+                        return redirect('company_list')
+                except Exception as e:
+                    messages.error(request, f"An error occurred during restoration: {e}")
+    else:
+        form = RestoreForm()
+
+    return render(request, 'accounting/restore_company.html', {
+        'form': form,
+        'title': 'Restore Company from Backup'
     })

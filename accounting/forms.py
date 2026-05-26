@@ -159,3 +159,17 @@ class GlobalSettingForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. C:\\Backups'}),
         help_text="Enter a full folder path (e.g. C:\\Backups or /home/user/backups). If left blank, 'backups/' in the project folder will be used."
     )
+
+class RestoreForm(forms.Form):
+    backup_file_path = forms.CharField(
+        max_length=512,
+        label="Source Backup File (.sqlite3)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. C:\\Backups\\backup_20240526.sqlite3'}),
+        help_text="Provide the full path to the backup file you want to restore."
+    )
+    restore_as_name = forms.CharField(
+        max_length=255,
+        label="Restore As Company Name",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. My Restored Business'}),
+        help_text="The company name to use for this restored database."
+    )

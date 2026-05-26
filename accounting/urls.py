@@ -7,6 +7,7 @@ urlpatterns = [
     path('companies/add/', views.add_company, name='add_company'),
     path('companies/<int:pk>/select/', views.select_company, name='select_company'),
     path('companies/open-sample/', views.open_sample_company, name='open_sample_company'),
+    path('companies/restore/', views.restore_company, name='restore_company'),
     path('companies/save/', views.save_company, name='save_company'),
     path('companies/copy/', views.copy_company, name='copy_company'),
     path('companies/backup/', views.backup_company, name='backup_company'),
