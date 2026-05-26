@@ -1,0 +1,52 @@
+{% extends "accounting/base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }} - {{ company.name }}</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Specify the destination folder for your backup copy.</p>
+                <div class="alert alert-info">
+                    <strong>Note:</strong> The application will save a permanent copy to the folder you specify below.
+                    Your browser will also download a secondary copy to your "Downloads" folder.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <h5>Destination Path</h5>
+                        <hr>
+                        {{ form.backup_path.label_tag }}
+                        {{ form.backup_path }}
+                        {% if form.backup_path.help_text %}
+                            <div class="form-text text-muted">{{ form.backup_path.help_text }}</div>
+                        {% endif %}
+                        <div class="mt-2 small text-secondary">
+                            <strong>Default Location:</strong> {{ default_dir }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Start Backup</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 card border-warning">
+            <div class="card-body">
+                <h6 class="text-warning"><i class="bi bi-exclamation-triangle"></i> Important</h6>
+                <p class="mb-0 small">
+                    Ensure the application has write permissions to the folder you provide.
+                    If you enter a new folder name, the application will attempt to create it for you.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

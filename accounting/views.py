@@ -17,6 +17,7 @@ def company_list(request):
     return render(request, 'accounting/company_list.html', {'companies': companies})
 
 import shutil
+from pathlib import Path
 from django.conf import settings
 
 def add_company(request):
@@ -197,21 +198,52 @@ def backup_company(request):
         return redirect('dashboard')
 
     from .backup_service import get_backup_dir
-    backup_dir = get_backup_dir()
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_filename = f"backup_{company.name.replace(' ', '_')}_{timestamp}.sqlite3"
+    default_backup_dir = get_backup_dir()
 
-    # Save a copy to the backup folder as well
-    try:
-        shutil.copy2(db_path, backup_dir / backup_filename)
-        messages.success(request, f"Backup copy saved to {backup_dir}")
-    except Exception as e:
-        messages.warning(request, f"Could not save backup copy to folder: {e}")
+    if request.method == 'POST':
+        form = GlobalSettingForm(request.POST)
+        if form.is_valid():
+            custom_path = form.cleaned_data.get('backup_path')
 
-    with open(db_path, 'rb') as f:
-        response = HttpResponse(f.read(), content_type='application/x-sqlite3')
-        response['Content-Disposition'] = f'attachment; filename="{backup_filename}"'
-        return response
+            if custom_path:
+                backup_dir = Path(custom_path)
+                # Ensure the custom directory exists
+                try:
+                    backup_dir.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    messages.error(request, f"Could not create directory: {e}")
+                    return redirect('backup_company')
+            else:
+                backup_dir = default_backup_dir
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_filename = f"backup_{company.name.replace(' ', '_')}_{timestamp}.sqlite3"
+
+            # Save a copy to the chosen backup folder
+            try:
+                shutil.copy2(db_path, backup_dir / backup_filename)
+                messages.success(request, f"Backup copy successfully saved to: {backup_dir}")
+            except Exception as e:
+                messages.error(request, f"Error saving backup to folder: {e}")
+                return redirect('backup_company')
+
+            # Serve the download as well
+            with open(db_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/x-sqlite3')
+                response['Content-Disposition'] = f'attachment; filename="{backup_filename}"'
+                return response
+    else:
+        # Use GlobalSetting for the initial value if it exists
+        backup_path_setting = GlobalSetting.objects.filter(key='backup_path').first()
+        initial_path = backup_path_setting.value if backup_path_setting else ""
+        form = GlobalSettingForm(initial={'backup_path': initial_path})
+
+    return render(request, 'accounting/backup_confirm.html', {
+        'form': form,
+        'company': company,
+        'default_dir': default_backup_dir,
+        'title': 'Confirm Backup'
+    })
 
 def dashboard(request):
     company_id = request.session.get('active_company_id')

@@ -156,5 +156,6 @@ class GlobalSettingForm(forms.Form):
         max_length=255,
         required=False,
         label="Backup Folder Path",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. C:\\Backups'}),
         help_text="Enter a full folder path (e.g. C:\\Backups or /home/user/backups). If left blank, 'backups/' in the project folder will be used."
     )
