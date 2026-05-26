@@ -1,0 +1,46 @@
+{% extends "accounting/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <h5>Backup Configuration</h5>
+                        <hr>
+                        {{ form.as_p }}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">Save Settings</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 card">
+            <div class="card-body">
+                <h5>Application Information</h5>
+                <ul class="list-unstyled">
+                    <li><strong>Project Root:</strong> {{ settings.BASE_DIR }}</li>
+                    <li><strong>Current Backup Directory:</strong>
+                        {% if form.initial.backup_path %}
+                            {{ form.initial.backup_path }}
+                        {% else %}
+                            [Project Root]/backups
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

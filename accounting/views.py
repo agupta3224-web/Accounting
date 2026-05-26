@@ -6,10 +6,10 @@ from django.db.models import Sum, Q
 from django.core import serializers
 from decimal import Decimal
 from datetime import datetime
-from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule
+from .models import Transaction, Property, LLC, JournalItem, Account, JournalEntry, AccountingClass, Vendor, Company, ImportRule, GlobalSetting
 from .services import create_journal_entry_from_transaction, reconcile_account as reconcile_service, close_books as close_service, setup_standard_accounts
 from .utils import import_csv_transactions, import_excel_property_manager, parse_csv_preview, parse_date, import_iif_coa, get_company_db_name
-from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm
+from .forms import TransactionForm, FileImportForm, ReconciliationForm, CloseBooksForm, JournalEntryForm, JournalItemFormSet, AccountForm, LLCForm, PropertyForm, AccountingClassForm, VendorForm, CompanyForm, GlobalSettingForm
 from django.utils.text import slugify
 
 def company_list(request):
@@ -189,17 +189,28 @@ def backup_company(request):
         return redirect('company_list')
 
     company = get_object_or_404(Company, id=active_id)
-    db_filename = company.db_name if company.db_name else f"company_{company.id}"
+    db_filename = company.db_name if company.db_name else f"company_{active_id}"
     db_path = settings.BASE_DIR / "data" / f"{db_filename}.sqlite3"
 
     if not db_path.exists():
         messages.error(request, "Database file not found.")
         return redirect('dashboard')
 
+    from .backup_service import get_backup_dir
+    backup_dir = get_backup_dir()
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_filename = f"backup_{company.name.replace(' ', '_')}_{timestamp}.sqlite3"
+
+    # Save a copy to the backup folder as well
+    try:
+        shutil.copy2(db_path, backup_dir / backup_filename)
+        messages.success(request, f"Backup copy saved to {backup_dir}")
+    except Exception as e:
+        messages.warning(request, f"Could not save backup copy to folder: {e}")
+
     with open(db_path, 'rb') as f:
-        filename = f"backup_{company.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sqlite3"
         response = HttpResponse(f.read(), content_type='application/x-sqlite3')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'attachment; filename="{backup_filename}"'
         return response
 
 def dashboard(request):
@@ -748,4 +759,22 @@ def add_journal_entry(request):
         'form': form,
         'formset': formset,
         'title': 'Add Journal Entry'
+    })
+
+def settings_view(request):
+    backup_path_setting, _ = GlobalSetting.objects.get_or_create(key='backup_path')
+
+    if request.method == 'POST':
+        form = GlobalSettingForm(request.POST)
+        if form.is_valid():
+            backup_path_setting.value = form.cleaned_data['backup_path']
+            backup_path_setting.save()
+            messages.success(request, "Settings updated successfully.")
+            return redirect('settings')
+    else:
+        form = GlobalSettingForm(initial={'backup_path': backup_path_setting.value})
+
+    return render(request, 'accounting/settings.html', {
+        'form': form,
+        'title': 'Global Settings'
     })

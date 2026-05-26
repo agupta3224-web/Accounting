@@ -6,15 +6,33 @@ import atexit
 from pathlib import Path
 from django.conf import settings
 
+def get_backup_dir():
+    """
+    Helper to get the backup directory from GlobalSetting or default.
+    """
+    from .models import GlobalSetting
+    try:
+        setting = GlobalSetting.objects.filter(key='backup_path').first()
+        if setting and setting.value:
+            custom_path = Path(setting.value)
+            if not custom_path.exists():
+                custom_path.mkdir(parents=True, exist_ok=True)
+            return custom_path
+    except:
+        pass
+
+    # Fallback
+    default_dir = Path(settings.BASE_DIR) / "backups"
+    if not default_dir.exists():
+        default_dir.mkdir(parents=True, exist_ok=True)
+    return default_dir
+
 def perform_backups():
     """
     Copy database files to backup directory.
     """
     data_dir = Path(settings.BASE_DIR) / "data"
-    backup_dir = Path(settings.BASE_DIR) / "backups"
-
-    if not backup_dir.exists():
-        backup_dir.mkdir()
+    backup_dir = get_backup_dir()
 
     for db_file in data_dir.glob("*.sqlite3"):
         if "template" in db_file.name: continue
@@ -34,12 +52,6 @@ def run_backup_service():
     """
     Background thread to backup database files every 5 minutes.
     """
-    data_dir = Path(settings.BASE_DIR) / "data"
-    backup_dir = Path(settings.BASE_DIR) / "backups"
-
-    if not backup_dir.exists():
-        backup_dir.mkdir()
-
     while True:
         try:
             perform_backups()

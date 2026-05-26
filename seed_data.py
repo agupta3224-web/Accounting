@@ -48,7 +48,10 @@ def seed():
     print("Template database ready.")
 
     # 5. Seed initial company's DB if it doesn't exist
-    db_path = f"data/company_{company.id}.sqlite3"
+    db_filename = company.db_name if company.db_name else f"company_{company.id}.sqlite3"
+    if not db_filename.endswith(".sqlite3"):
+        db_filename += ".sqlite3"
+    db_path = os.path.join("data", db_filename)
     if not os.path.exists(db_path):
         import shutil
         shutil.copy2("data/template.sqlite3", db_path)
