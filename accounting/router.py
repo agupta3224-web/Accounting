@@ -18,7 +18,7 @@ class CompanyRouter:
     def db_for_read(self, model, **hints):
         app_label = model._meta.app_label
         if app_label == 'accounting':
-            if model._meta.model_name in ['company', 'subscription']:
+            if model._meta.model_name in ['company', 'subscription', 'globalsetting']:
                 return 'default'
             return get_active_db()
 
@@ -31,7 +31,7 @@ class CompanyRouter:
     def db_for_write(self, model, **hints):
         app_label = model._meta.app_label
         if app_label == 'accounting':
-            if model._meta.model_name in ['company', 'subscription']:
+            if model._meta.model_name in ['company', 'subscription', 'globalsetting']:
                 return 'default'
             return get_active_db()
 
@@ -45,7 +45,7 @@ class CompanyRouter:
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if app_label == 'accounting':
-            if model_name in ['company', 'subscription']:
+            if model_name in ['company', 'subscription', 'globalsetting']:
                 return db == 'default'
             return True # Allow accounting models in both master and shards
 
