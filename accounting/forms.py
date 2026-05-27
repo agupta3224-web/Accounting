@@ -161,11 +161,10 @@ class GlobalSettingForm(forms.Form):
     )
 
 class RestoreForm(forms.Form):
-    backup_file_path = forms.CharField(
-        max_length=512,
-        label="Source Backup File (.sqlite3)",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. C:\\Backups\\backup_20240526.sqlite3'}),
-        help_text="Provide the full path to the backup file you want to restore."
+    backup_file = forms.FileField(
+        label="Select Backup File (.sqlite3)",
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.sqlite3'}),
+        help_text="Click to browse and select a backup file from your computer."
     )
     restore_as_name = forms.CharField(
         max_length=255,

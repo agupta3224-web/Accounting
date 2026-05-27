@@ -813,34 +813,31 @@ def settings_view(request):
 
 def restore_company(request):
     if request.method == 'POST':
-        form = RestoreForm(request.POST)
+        form = RestoreForm(request.POST, request.FILES)
         if form.is_valid():
-            backup_file_path = Path(form.cleaned_data['backup_file_path'])
+            backup_file = request.FILES['backup_file']
             restore_as_name = form.cleaned_data['restore_as_name']
 
-            if not backup_file_path.exists():
-                messages.error(request, f"Backup file not found at: {backup_file_path}")
-            elif not backup_file_path.is_file():
-                messages.error(request, f"The path provided is not a file: {backup_file_path}")
-            else:
-                try:
-                    db_alias = get_company_db_name(restore_as_name)
-                    db_filename = f"{db_alias}.sqlite3"
-                    dest_path = settings.BASE_DIR / "data" / db_filename
+            try:
+                db_alias = get_company_db_name(restore_as_name)
+                db_filename = f"{db_alias}.sqlite3"
+                dest_path = settings.BASE_DIR / "data" / db_filename
 
-                    if dest_path.exists():
-                        messages.error(request, f"A database named {db_filename} already exists. Please choose a different company name.")
-                    else:
-                        # Copy the backup file
-                        shutil.copy2(backup_file_path, dest_path)
+                if dest_path.exists():
+                    messages.error(request, f"A database named {db_filename} already exists. Please choose a different company name.")
+                else:
+                    # Save the uploaded file
+                    with open(dest_path, 'wb+') as destination:
+                        for chunk in backup_file.chunks():
+                            destination.write(chunk)
 
                         # Create Company record
                         Company.objects.create(name=restore_as_name, db_name=db_alias)
 
                         messages.success(request, f"Company '{restore_as_name}' successfully restored from backup.")
                         return redirect('company_list')
-                except Exception as e:
-                    messages.error(request, f"An error occurred during restoration: {e}")
+            except Exception as e:
+                messages.error(request, f"An error occurred during restoration: {e}")
     else:
         form = RestoreForm()
 
@@ -848,3 +845,45 @@ def restore_company(request):
         'form': form,
         'title': 'Restore Company from Backup'
     })
+
+import subprocess
+import platform
+
+def open_in_explorer(request):
+    """
+    Utility to open the native OS file explorer to a specific folder.
+    """
+    path_str = request.GET.get('path')
+    if not path_str:
+        # Fallback to project backups directory if no path provided
+        from .backup_service import get_backup_dir
+        path_str = str(get_backup_dir())
+
+    path = Path(path_str)
+
+    # Safety: ensure directory exists
+    if not path.exists():
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except:
+            messages.error(request, f"Could not open or create directory: {path_str}")
+            return redirect('dashboard')
+
+    try:
+        system = platform.system()
+        if system == "Windows":
+            # Use explorer.exe for Windows
+            subprocess.Popen(['explorer', str(path)])
+        elif system == "Darwin":
+            # Use open command for macOS
+            subprocess.Popen(['open', str(path)])
+        else:
+            # Use xdg-open for Linux (Nautilus, Dolphin, etc.)
+            subprocess.Popen(['xdg-open', str(path)])
+
+        messages.success(request, f"Opening folder: {path_str}")
+    except Exception as e:
+        messages.error(request, f"Error opening file explorer: {e}")
+
+    # Redirect back to where the user came from
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))

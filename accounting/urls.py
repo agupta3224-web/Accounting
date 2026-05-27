@@ -23,6 +23,7 @@ urlpatterns = [
     path('coa/<int:pk>/delete/', views.delete_account, name='delete_account'),
     path('coa/import-iif/', views.import_coa_iif, name='import_coa_iif'),
     path('settings/', views.settings_view, name='settings'),
+    path('open-explorer/', views.open_in_explorer, name='open_explorer'),
     path('lists/vendors/', views.vendor_list, name='vendor_list'),
     path('lists/vendors/add/', views.add_vendor, name='add_vendor'),
     path('lists/vendors/<int:pk>/edit/', views.edit_vendor, name='edit_vendor'),

@@ -15,7 +15,7 @@
                     If you want to replace an existing company, please rename or delete the old one first.
                 </div>
 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <div class="mb-4">
@@ -23,10 +23,10 @@
                         <hr>
 
                         <div class="mb-3">
-                            {{ form.backup_file_path.label_tag }}
-                            {{ form.backup_file_path }}
-                            {% if form.backup_file_path.help_text %}
-                                <div class="form-text">{{ form.backup_file_path.help_text }}</div>
+                            {{ form.backup_file.label_tag }}
+                            {{ form.backup_file }}
+                            {% if form.backup_file.help_text %}
+                                <div class="form-text">{{ form.backup_file.help_text }}</div>
                             {% endif %}
                         </div>
 

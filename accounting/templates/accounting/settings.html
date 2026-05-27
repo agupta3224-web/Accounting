@@ -15,7 +15,18 @@
                     <div class="mb-4">
                         <h5>Backup Configuration</h5>
                         <hr>
-                        {{ form.as_p }}
+                        <div class="mb-3">
+                            {{ form.backup_path.label_tag }}
+                            <div class="input-group">
+                                {{ form.backup_path }}
+                                <a href="{% url 'open_explorer' %}?path={{ form.initial.backup_path|urlencode }}" class="btn btn-outline-primary" title="Open in Explorer">
+                                    <i class="bi bi-folder2-open"></i> Browse
+                                </a>
+                            </div>
+                            {% if form.backup_path.help_text %}
+                                <div class="form-text text-muted">{{ form.backup_path.help_text }}</div>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div class="d-grid gap-2">
