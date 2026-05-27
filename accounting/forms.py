@@ -160,6 +160,15 @@ class GlobalSettingForm(forms.Form):
         help_text="Enter a full folder path (e.g. C:\\Backups or /home/user/backups). If left blank, 'backups/' in the project folder will be used."
     )
 
+    def clean_backup_path(self):
+        path = self.cleaned_data.get('backup_path')
+        if path:
+            # Basic validation: check for invalid filesystem characters
+            invalid_chars = '<>:"|?*'
+            if any(char in path for char in invalid_chars):
+                raise forms.ValidationError("The path contains invalid characters.")
+        return path
+
 class RestoreForm(forms.Form):
     backup_file = forms.FileField(
         label="Select Backup File (.sqlite3)",

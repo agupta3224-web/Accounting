@@ -871,19 +871,26 @@ def open_in_explorer(request):
 
     try:
         system = platform.system()
+        # Resolve to absolute path to ensure OS commands work correctly
+        abs_path = path.resolve()
+
         if system == "Windows":
-            # Use explorer.exe for Windows
-            subprocess.Popen(['explorer', str(path)])
+            # Use explorer.exe with explicit absolute path
+            # Windows explorer command works best with backslashes
+            win_path = str(abs_path).replace('/', '\\')
+            subprocess.Popen(['explorer.exe', win_path])
         elif system == "Darwin":
             # Use open command for macOS
-            subprocess.Popen(['open', str(path)])
+            subprocess.Popen(['open', str(abs_path)])
         else:
-            # Use xdg-open for Linux (Nautilus, Dolphin, etc.)
-            subprocess.Popen(['xdg-open', str(path)])
+            # Use xdg-open for Linux
+            subprocess.Popen(['xdg-open', str(abs_path)])
 
-        messages.success(request, f"Opening folder: {path_str}")
+        messages.success(request, f"Triggered file explorer for: {abs_path}")
+        messages.info(request, "If the window didn't open, please copy the path manually from the settings page.")
     except Exception as e:
         messages.error(request, f"Error opening file explorer: {e}")
+        messages.info(request, f"Manual path: {path_str}")
 
     # Redirect back to where the user came from
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))

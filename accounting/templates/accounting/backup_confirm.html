@@ -24,6 +24,9 @@
                             {{ form.backup_path.label_tag }}
                             <div class="input-group">
                                 {{ form.backup_path }}
+                            <button type="button" class="btn btn-outline-secondary" onclick="copyPath('{{ form.backup_path.id_for_label }}')" title="Copy Path">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
                                 <a href="{% url 'open_explorer' %}?path={{ form.initial.backup_path|urlencode }}" class="btn btn-outline-primary" title="Open in Explorer">
                                     <i class="bi bi-folder2-open"></i> Browse
                                 </a>
@@ -56,4 +59,14 @@
         </div>
     </div>
 </div>
+<script>
+function copyPath(fieldId) {
+    var copyText = document.getElementById(fieldId);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value).then(() => {
+        alert("Path copied to clipboard: " + copyText.value);
+    });
+}
+</script>
 {% endblock %}
