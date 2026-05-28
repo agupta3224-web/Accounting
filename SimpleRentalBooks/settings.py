@@ -95,6 +95,10 @@ DATABASES = {
     "company_template": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": (BASE_DIR / "data" / "template.sqlite3").resolve(),
+    },
+    "test_company": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": (BASE_DIR / "data" / "test_company.sqlite3").resolve(),
     }
 }
 

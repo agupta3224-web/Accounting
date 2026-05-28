@@ -6,26 +6,21 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 from .models import LLC, Property, Account, Transaction, JournalItem, Company
 from .services import create_journal_entry_from_transaction
+from .router import set_active_db
 import shutil
 
 class AccountingTest(TransactionTestCase):
     databases = '__all__'
 
+    def tearDown(self):
+        set_active_db('default')
+        super().tearDown()
+
     def setUp(self):
         self.company = Company.objects.create(name="Test Company", db_name="test_company")
         # Initialize company DB
         self.db_alias = self.company.db_name
-        self.db_path = settings.BASE_DIR / "data" / f"{self.db_alias}.sqlite3"
-        if not self.db_path.exists():
-            shutil.copy2(settings.BASE_DIR / "data" / "template.sqlite3", self.db_path)
-
-        new_config = settings.DATABASES['default'].copy()
-        new_config.update({
-            'NAME': self.db_path,
-            'ATOMIC_REQUESTS': False,
-            'AUTOCOMMIT': True,
-        })
-        settings.DATABASES[self.db_alias] = new_config
+        set_active_db(self.db_alias)
 
         # Set active company in session
         session = self.client.session
@@ -60,6 +55,11 @@ class AccountingTest(TransactionTestCase):
         self.assertEqual(credit_item.credit, 1000)
 
     def test_transaction_views(self):
+        # Manually ensure middleware sets the right DB for the client requests
+        session = self.client.session
+        session['active_company_id'] = self.company.id
+        session.save()
+
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
 
@@ -77,6 +77,8 @@ class AccountingTest(TransactionTestCase):
         }
         response = self.client.post(reverse('add_transaction'), data)
         self.assertEqual(response.status_code, 302) # Redirect
+
+        set_active_db(self.db_alias)
         self.assertEqual(Transaction.objects.filter(description='Repair sink').count(), 1)
 
     def test_delete_account(self):
@@ -113,6 +115,7 @@ class AccountingTest(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
 
         # Verify account created
+        set_active_db(self.db_alias)
         self.assertTrue(Account.objects.filter(name="CheckingIIF", company_id=self.company.id).exists())
 
     def test_import_iif_coa_duplicate_code(self):
@@ -129,4 +132,5 @@ class AccountingTest(TransactionTestCase):
         response = self.client.post(reverse('import_coa_iif'), {'file': iif_file})
         self.assertEqual(response.status_code, 302)
 
+        set_active_db(self.db_alias)
         self.assertTrue(Account.objects.filter(code="1000", name="New Cash", company_id=self.company.id).exists())
