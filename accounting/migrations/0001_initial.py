@@ -403,4 +403,20 @@ class Migration(migrations.Migration):
                 "unique_together": {("company_id", "search_text")},
             },
         ),
+        migrations.CreateModel(
+            name="GlobalSetting",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("key", models.CharField(max_length=255, unique=True)),
+                ("value", models.TextField(blank=True)),
+            ],
+        ),
     ]
