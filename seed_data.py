@@ -1,6 +1,8 @@
 import sys
 import os
 import django
+import shutil
+from django.utils.text import slugify
 
 # Set up Django environment
 sys.path.append(os.getcwd())
@@ -12,6 +14,7 @@ from accounting.models import Account, AccountingClass, Company
 from accounting.services import setup_standard_accounts
 from django.db import connection, connections
 from django.core.management import call_command
+from django.conf import settings
 
 import time
 
@@ -32,30 +35,55 @@ def seed():
         except Exception as e:
             print(f"Note: Could not create superuser via script: {e}")
             print("You can create one manually using: python manage.py createsuperuser")
+    else:
+        print("Superuser 'admin' already exists.")
 
-    # 2. Ensure at least one company exists
-    company, created = Company.objects.get_or_create(name="Default Company")
-    if created:
+    # 2. Check for existing companies
+    existing_companies = Company.objects.all()
+    if not existing_companies.exists():
+        company = Company.objects.create(name="Default Company")
         print(f"Created initial company: {company.name}")
+    else:
+        print(f"Found {existing_companies.count()} existing companies.")
 
-    # 3. Create a template database for new companies
-    print("Creating template database...")
-    call_command('migrate', database='company_template', interactive=False)
+    # 3. Create a template database for new companies if it doesn't exist
+    template_path = os.path.join("data", "template.sqlite3")
+    if not os.path.exists(template_path):
+        print("Creating template database...")
+        call_command('migrate', database='company_template', interactive=False)
+    else:
+        print("Template database already exists.")
 
-    # 4. Seed Chart of Accounts into the template
-    # Since we can't easily switch the default in seed script without hints,
-    # we'll just ensure template is migrated.
-    print("Template database ready.")
+    # 4. Migrate existing company database files to name-based sharding
+    data_dir = settings.BASE_DIR / "data"
+    for company in Company.objects.all():
+        # Generate the correct name-based filename
+        from accounting.utils import get_company_db_name
+        new_alias = get_company_db_name(company.name)
+        new_filename = f"{new_alias}.sqlite3"
+        new_path = data_dir / new_filename
 
-    # 5. Seed initial company's DB if it doesn't exist
-    db_filename = company.db_name if company.db_name else f"company_{company.id}.sqlite3"
-    if not db_filename.endswith(".sqlite3"):
-        db_filename += ".sqlite3"
-    db_path = os.path.join("data", db_filename)
-    if not os.path.exists(db_path):
-        import shutil
-        shutil.copy2("data/template.sqlite3", db_path)
-        print(f"Initialized data file for {company.name}")
+        # Check if we need to update db_name in master
+        if company.db_name != new_alias:
+            print(f"Upgrading metadata for Company '{company.name}'...")
+            company.db_name = new_alias
+            company.save()
+
+        # Handle file migration
+        if not new_path.exists():
+            # Check for legacy ID-based file
+            old_filename = f"company_{company.id}.sqlite3"
+            old_path = data_dir / old_filename
+
+            if old_path.exists():
+                print(f"Migrating Company '{company.name}' data file: {old_filename} -> {new_filename}")
+                shutil.move(old_path, new_path)
+            else:
+                # If neither exists, initialize from template
+                print(f"Initializing data file for Company '{company.name}' from template...")
+                shutil.copy2(template_path, new_path)
+        else:
+            print(f"Data file for Company '{company.name}' is already up to date: {new_filename}")
 
 if __name__ == "__main__":
     seed()

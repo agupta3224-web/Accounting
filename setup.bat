@@ -56,8 +56,11 @@ if exist data\db.sqlite3 (
 :: Ensure migrations are ready
 venv\Scripts\python.exe manage.py makemigrations accounting
 
+:: Run database repair script to handle legacy data and schema updates
+echo Checking and repairing database schema...
+venv\Scripts\python.exe db_repair.py
+
 :: Run migrations (creates the tables)
-:: Use --fake-initial to handle cases where tables already exist from previous manual setups
 venv\Scripts\python.exe manage.py migrate --fake-initial
 venv\Scripts\python.exe manage.py migrate --database=company_template --fake-initial
 if %errorlevel% neq 0 (
@@ -66,7 +69,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Seed initial data
+:: Seed initial data and migrate shards
 venv\Scripts\python.exe seed_data.py
 if %errorlevel% neq 0 (
     echo ERROR: Failed to set up the database.

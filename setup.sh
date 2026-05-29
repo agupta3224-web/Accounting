@@ -37,11 +37,14 @@ fi
 # Ensure migrations are ready
 ./venv/bin/python manage.py makemigrations accounting
 
+# Run database repair script to handle legacy data and schema updates
+echo "Checking and repairing database schema..."
+./venv/bin/python db_repair.py
+
 # Run migrations (creates the tables)
-# Use --fake-initial to handle cases where tables already exist from previous manual setups
 ./venv/bin/python manage.py migrate --fake-initial
 
-# Seed initial data
+# Seed initial data and migrate shards
 ./venv/bin/python seed_data.py
 
 echo ""
