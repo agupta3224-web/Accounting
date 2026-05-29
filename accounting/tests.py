@@ -134,3 +134,63 @@ class AccountingTest(TransactionTestCase):
 
         set_active_db(self.db_alias)
         self.assertTrue(Account.objects.filter(code="1000", name="New Cash", company_id=self.company.id).exists())
+
+    def test_pnl_net_balances(self):
+        """
+        Verify that P&L correctly calculates net balances including spending and refunds.
+        """
+        # 1. Normal Rent Income (Money IN)
+        Transaction.objects.create(
+            date=timezone.now().date(),
+            description="Rent",
+            amount=1000,
+            category=self.rent,
+            payment_account=self.bank,
+            company_id=self.company.id
+        )
+        # 2. Rent Refund (Money OUT - Negative Income)
+        Transaction.objects.create(
+            date=timezone.now().date(),
+            description="Rent Refund",
+            amount=-200,
+            category=self.rent,
+            payment_account=self.bank,
+            company_id=self.company.id
+        )
+        # 3. Normal Repair (Money OUT - Positive Expense now treated as OUT)
+        Transaction.objects.create(
+            date=timezone.now().date(),
+            description="Repair",
+            amount=500,
+            category=self.expense_acc,
+            payment_account=self.bank,
+            company_id=self.company.id
+        )
+        # 4. Repair Refund (Money IN - Negative Expense)
+        Transaction.objects.create(
+            date=timezone.now().date(),
+            description="Repair Refund",
+            amount=-50,
+            category=self.expense_acc,
+            payment_account=self.bank,
+            company_id=self.company.id
+        )
+
+        # Synchronize journal entries
+        for tx in Transaction.objects.filter(company_id=self.company.id):
+            create_journal_entry_from_transaction(tx)
+
+        # Check P&L View
+        response = self.client.get(reverse('pnl'))
+        self.assertEqual(response.status_code, 200)
+
+        # Net Income should be (1000 - 200) = 800
+        self.assertEqual(response.context['total_income'], 800)
+        # Net Expense should be (500 - 50) = 450
+        self.assertEqual(response.context['total_expense'], 450)
+        # Net Profit should be 800 - 450 = 350
+        self.assertEqual(response.context['net_profit'], 350)
+
+        # Check Dashboard View
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.context['net_income'], 350)

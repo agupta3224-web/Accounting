@@ -249,8 +249,15 @@ def dashboard(request):
     company_id = request.session.get('active_company_id')
     properties = Property.objects.filter(llc__company_id=company_id)
     llcs = LLC.objects.filter(company_id=company_id)
-    total_income = JournalItem.objects.filter(entry__company_id=company_id, account__account_type='INCOME').aggregate(Sum('credit'))['credit__sum'] or 0
-    total_expense = JournalItem.objects.filter(entry__company_id=company_id, account__account_type='EXPENSE').aggregate(Sum('debit'))['debit__sum'] or 0
+
+    # Calculate net income by getting the net balance of all INCOME items
+    income_agg = JournalItem.objects.filter(entry__company_id=company_id, account__account_type='INCOME').aggregate(cr=Sum('credit'), dr=Sum('debit'))
+    total_income = (income_agg['cr'] or 0) - (income_agg['dr'] or 0)
+
+    # Calculate net expense by getting the net balance of all EXPENSE items
+    expense_agg = JournalItem.objects.filter(entry__company_id=company_id, account__account_type='EXPENSE').aggregate(dr=Sum('debit'), cr=Sum('credit'))
+    total_expense = (expense_agg['dr'] or 0) - (expense_agg['cr'] or 0)
+
     context = {
         'properties': properties,
         'llcs': llcs,
@@ -468,8 +475,20 @@ def profit_and_loss(request):
     if start_date: filters &= Q(entry__date__gte=start_date)
     if end_date: filters &= Q(entry__date__lte=end_date)
 
-    income_items = JournalItem.objects.filter(filters, account__account_type='INCOME').values('account__name').annotate(total=Sum('credit'))
-    expense_items = JournalItem.objects.filter(filters, account__account_type='EXPENSE').values('account__name').annotate(total=Sum('debit'))
+    # Calculate net for each account to capture reversals/refunds
+    income_raw = JournalItem.objects.filter(filters, account__account_type='INCOME').values('account__name').annotate(cr=Sum('credit'), dr=Sum('debit'))
+    income_items = []
+    for item in income_raw:
+        total = (item['cr'] or 0) - (item['dr'] or 0)
+        if total != 0:
+            income_items.append({'account__name': item['account__name'], 'total': total})
+
+    expense_raw = JournalItem.objects.filter(filters, account__account_type='EXPENSE').values('account__name').annotate(dr=Sum('debit'), cr=Sum('credit'))
+    expense_items = []
+    for item in expense_raw:
+        total = (item['dr'] or 0) - (item['cr'] or 0)
+        if total != 0:
+            expense_items.append({'account__name': item['account__name'], 'total': total})
 
     total_income = sum(item['total'] for item in income_items)
     total_expense = sum(item['total'] for item in expense_items)
