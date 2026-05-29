@@ -27,6 +27,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("name", models.CharField(max_length=255)),
+                ("db_name", models.CharField(blank=True, max_length=255, null=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
