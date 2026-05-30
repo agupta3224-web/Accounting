@@ -91,6 +91,11 @@ def seed():
         from accounting.models import Transaction as SingleTransaction
         from accounting.services import create_journal_entry_from_transaction
 
+        # Manually register the database connection for this sync process
+        if new_alias not in settings.DATABASES:
+             settings.DATABASES[new_alias] = settings.DATABASES['default'].copy()
+             settings.DATABASES[new_alias]['NAME'] = new_path
+
         set_active_db(new_alias)
         try:
             for tx in SingleTransaction.objects.all():

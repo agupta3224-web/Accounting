@@ -138,7 +138,7 @@ class AccountingTest(TransactionTestCase):
     def test_pnl_net_balances(self):
         """
         Verify that P&L correctly calculates net balances including spending and refunds.
-        Intuitive Convention: Positive Expense = Spending, Positive Income = Revenue
+        Unified Convention: Positive = Money IN, Negative = Money OUT
         """
         # 1. Normal Rent Income (Money IN - Positive)
         Transaction.objects.create(
@@ -158,20 +158,20 @@ class AccountingTest(TransactionTestCase):
             payment_account=self.bank,
             company_id=self.company.id
         )
-        # 3. Normal Repair (Money OUT - Positive)
+        # 3. Normal Repair (Money OUT - Negative)
         Transaction.objects.create(
             date=timezone.now().date(),
             description="Repair",
-            amount=500,
+            amount=-500,
             category=self.expense_acc,
             payment_account=self.bank,
             company_id=self.company.id
         )
-        # 4. Repair Refund (Money IN - Negative)
+        # 4. Repair Refund (Money IN - Positive)
         Transaction.objects.create(
             date=timezone.now().date(),
             description="Repair Refund",
-            amount=-50,
+            amount=50,
             category=self.expense_acc,
             payment_account=self.bank,
             company_id=self.company.id
