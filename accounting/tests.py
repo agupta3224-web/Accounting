@@ -138,7 +138,7 @@ class AccountingTest(TransactionTestCase):
     def test_pnl_net_balances(self):
         """
         Verify that P&L correctly calculates net balances including spending and refunds.
-        Intuitive Convention: Positive Income = Money IN, Positive Expense = Money OUT
+        Intuitive Convention: Positive Expense = Spending, Positive Income = Revenue
         """
         # 1. Normal Rent Income (Money IN - Positive)
         Transaction.objects.create(
