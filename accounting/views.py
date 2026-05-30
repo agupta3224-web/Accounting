@@ -476,6 +476,9 @@ def profit_and_loss(request):
     if end_date: filters &= Q(entry__date__lte=end_date)
 
     # Calculate net for each account to capture reversals/refunds
+    # Unified Logic:
+    #   Income Section: Show (Credit - Debit). Standard revenue (Credit) shows as positive.
+    #   Expense Section: Show (Debit - Credit). Standard spending (Debit) shows as positive.
     income_raw = JournalItem.objects.filter(filters, account__account_type='INCOME').values('account__name').annotate(cr=Sum('credit'), dr=Sum('debit'))
     income_items = []
     for item in income_raw:

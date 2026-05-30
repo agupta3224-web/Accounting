@@ -83,7 +83,22 @@ def seed():
                 print(f"Initializing data file for Company '{company.name}' from template...")
                 shutil.copy2(template_path, new_path)
         else:
-            print(f"Data file for Company '{company.name}' is already up to date: {new_filename}")
+            print(f"Data file for Company '{company.name}' found: {new_filename}")
+
+        # 5. Sync Ledger for the company to ensure consistent signs with the new logic
+        print(f"  Syncing ledger for '{company.name}'...")
+        from accounting.router import set_active_db
+        from accounting.models import Transaction as SingleTransaction
+        from accounting.services import create_journal_entry_from_transaction
+
+        set_active_db(new_alias)
+        try:
+            for tx in SingleTransaction.objects.all():
+                create_journal_entry_from_transaction(tx)
+        except Exception as e:
+            print(f"  Warning: Could not sync ledger for {company.name}: {e}")
+        finally:
+            set_active_db('default')
 
 if __name__ == "__main__":
     seed()
