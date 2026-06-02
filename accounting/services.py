@@ -24,12 +24,20 @@ def create_journal_entry_from_transaction(single_tx):
                 description=single_tx.description
             )
 
-        # Determine debit/credit based on sign (Unified Sign Convention)
-        # Positive amount = Money IN (Debit Cash/Asset, Credit Category/Liability/Equity)
-        # Negative amount = Money OUT (Debit Category/Liability/Equity, Credit Cash/Asset)
+        # Determine debit/credit based on account type and sign (Intuitive Handling)
+        # For Income: Positive = Revenue (Credit Category, Debit Cash)
+        # For Expenses: Positive = Spending (Debit Category, Credit Cash)
 
         abs_amount = abs(single_tx.amount)
-        is_money_out = (single_tx.amount < 0)
+        category_type = single_tx.category.account_type
+
+        is_money_out = False
+        if category_type == 'EXPENSE':
+            # For expenses, positive amount means spending (Money OUT)
+            is_money_out = (single_tx.amount >= 0)
+        else:
+            # For income and other types, negative amount means Money OUT
+            is_money_out = (single_tx.amount < 0)
 
         if is_money_out:
             # Money OUT: Debit Category, Credit Payment Account
