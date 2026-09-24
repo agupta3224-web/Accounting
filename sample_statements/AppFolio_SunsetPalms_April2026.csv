@@ -1,0 +1,12 @@
+Post Date,Account Title,Payee/Tenant,Amount,Type,Unit
+04/01/2026,Tenant Rent - Unit 101,Alice Smith,"1,450.00",Income,101
+04/01/2026,Tenant Rent - Unit 102,Bob Jones,"1,450.00",Income,102
+04/02/2026,Tenant Rent - Unit 103,Charlie Brown,"1,500.00",Income,103
+04/02/2026,Tenant Rent - Unit 104,Diana Prince,"1,400.00",Income,104
+04/03/2026,Tenant Rent - Unit 201,Evan Wright,"1,600.00",Income,201
+04/03/2026,Tenant Rent - Unit 202,Fiona Gallagher,"1,550.00",Income,202
+04/05/2026,Late Charge Fee,Evan Wright,75.00,Income,201
+04/10/2026,Plumbing Maintenance,Pro-Drains LLC,-420.00,Expense,104
+04/12/2026,HVAC Repair & Service,CoolAir Tech,-650.00,Expense,202
+04/15/2026,Property Management Commission,Peak PM,-720.00,Expense,Building
+04/20/2026,Landscaping Service,GreenCare,-250.00,Expense,Common
