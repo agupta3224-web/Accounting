@@ -19,6 +19,13 @@ if __name__ == "__main__":
     print(" ? Web App UI:        http://localhost:8000")
     print(" ? Interactive Docs:  http://localhost:8000/docs")
     print("=" * 70)
-    print(" Starting server on http://localhost:8000 ...")
+    import threading
+    import time
+
+    def open_browser():
+        time.sleep(1.2)
+        webbrowser.open("http://localhost:8000")
+
+    threading.Thread(target=open_browser, daemon=True).start()
 
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=False)
