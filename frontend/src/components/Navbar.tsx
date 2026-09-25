@@ -6,23 +6,17 @@ import {
   ListFilter, 
   PlusCircle, 
   Layers, 
-  BookOpen,
-  Scale,
-  CheckSquare,
-  Users,
-  Landmark,
-  Shield,
-  Home,
-  LogOut,
-  Archive,
-  Download,
-  CheckCircle2,
-  Key,
-  Zap,
-  Printer,
-  LayoutGrid,
-  Maximize,
-  ChevronDown,
+  BookOpen, 
+  Scale, 
+  CheckSquare, 
+  Users, 
+  Landmark, 
+  LogOut, 
+  Archive, 
+  CheckCircle2, 
+  Zap, 
+  LayoutGrid, 
+  ChevronDown, 
   Sparkles,
   Palette,
   Check
@@ -105,8 +99,61 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isTrial = licenseStatus?.is_trial;
   const isExpired = licenseStatus?.status === 'EXPIRED';
 
+  const isLight = theme === 'light';
+  const isNavy = theme === 'navy';
+  const isEmerald = theme === 'emerald';
+
+  // Dynamic Theme Containers
+  const headerClass = isLight
+    ? 'bg-white border-b border-slate-200 sticky top-0 z-40 text-slate-800 shadow-xs'
+    : isNavy
+    ? 'bg-[#0a1124] border-b border-blue-900/60 sticky top-0 z-40 text-white shadow-lg'
+    : isEmerald
+    ? 'bg-[#041710] border-b border-emerald-900/60 sticky top-0 z-40 text-white shadow-lg'
+    : 'bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-lg';
+
+  const brandTitleClass = isLight ? 'font-extrabold text-base tracking-tight text-slate-900' : 'font-extrabold text-base tracking-tight text-white';
+  const brandSubClass = isLight ? 'text-[11px] text-slate-500 font-medium' : 'text-[11px] text-slate-400';
+
+  const companyBadgeBtnClass = isLight
+    ? 'text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-indigo-900 border border-slate-300 shadow-2xs flex items-center space-x-1.5 transition cursor-pointer'
+    : 'text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-emerald-300 hover:text-white hover:border-emerald-500/50 border border-slate-700/80 shadow-sm flex items-center space-x-1.5 transition cursor-pointer';
+
+  const dropdownMenuClass = isLight
+    ? 'absolute left-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-2xl py-2 z-50 text-slate-800 animate-in fade-in zoom-in-95 duration-100'
+    : 'absolute left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-100';
+
+  const dropdownBorderClass = isLight ? 'border-b border-slate-200 text-xs' : 'border-b border-slate-800 text-xs';
+
+  const dockContainerClass = isLight
+    ? 'flex items-center space-x-1.5 xl:space-x-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-300/80 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] overflow-x-auto no-scrollbar max-w-full'
+    : isNavy
+    ? 'flex items-center space-x-1.5 xl:space-x-2 bg-[#060b17]/90 p-1.5 rounded-2xl border border-blue-900/60 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar max-w-full'
+    : isEmerald
+    ? 'flex items-center space-x-1.5 xl:space-x-2 bg-[#020e09]/90 p-1.5 rounded-2xl border border-emerald-900/60 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar max-w-full'
+    : 'flex items-center space-x-1.5 xl:space-x-2 bg-slate-950/85 p-1.5 rounded-2xl border border-slate-750/80 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar max-w-full';
+
+  // Navigation button inactive helper
+  const navBtnBase = 'h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98]';
+
+  const getNavBtnClass = (isActive: boolean, activeGradient: string, inactiveLightExtra: string, inactiveDarkExtra: string) => {
+    if (isActive) {
+      return `${navBtnBase} ${activeGradient}`;
+    }
+    if (isLight) {
+      return `${navBtnBase} bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-950 border border-slate-300 hover:border-slate-400 shadow-2xs ${inactiveLightExtra}`;
+    }
+    if (isNavy) {
+      return `${navBtnBase} bg-gradient-to-b from-[#111e38] to-[#0d182d] hover:from-[#17294d] hover:to-[#111e38] text-slate-200 hover:text-white border border-blue-900/50 shadow-sm ${inactiveDarkExtra}`;
+    }
+    if (isEmerald) {
+      return `${navBtnBase} bg-gradient-to-b from-[#08291e] to-[#051e16] hover:from-[#0d3b2c] hover:to-[#08291e] text-emerald-100 hover:text-white border border-emerald-900/50 shadow-sm ${inactiveDarkExtra}`;
+    }
+    return `${navBtnBase} bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-sm ${inactiveDarkExtra}`;
+  };
+
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-lg">
+    <header className={headerClass}>
       <div className="w-full px-3 sm:px-5 lg:px-6">
         <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
           
@@ -120,18 +167,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-base tracking-tight text-white">PropBooks</span>
+                <span className={brandTitleClass}>PropBooks</span>
                 
                 {/* Company Dropdown Badge */}
                 <div className="relative">
                   <button
                     onClick={() => setShowCompanyMenu(!showCompanyMenu)}
-                    className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-emerald-300 hover:text-white hover:border-emerald-500/50 border border-slate-700/80 shadow-sm flex items-center space-x-1.5 transition cursor-pointer"
+                    className={companyBadgeBtnClass}
                     title="Company & Entity Menu"
                   >
-                    <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+                    <Landmark className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-600' : 'text-emerald-400'}`} />
                     <span className="truncate max-w-36">{activeCompanyName}</span>
-                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                    <ChevronDown className={`w-3 h-3 ${isLight ? 'text-slate-500' : 'text-slate-400'}`} />
                   </button>
 
                   {/* Company Dropdown Menu */}
@@ -141,10 +188,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="fixed inset-0 z-40" 
                         onClick={() => setShowCompanyMenu(false)} 
                       />
-                      <div className="absolute left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-100">
-                        <div className="px-3.5 py-2.5 border-b border-slate-800 text-xs">
-                          <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Current File</div>
-                          <div className="font-bold text-emerald-300 text-sm truncate">{activeCompanyName}</div>
+                      <div className={dropdownMenuClass}>
+                        <div className={`px-3.5 py-2.5 ${dropdownBorderClass}`}>
+                          <div className={`text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Current File</div>
+                          <div className={`font-bold text-sm truncate ${isLight ? 'text-indigo-900' : 'text-emerald-300'}`}>{activeCompanyName}</div>
                         </div>
 
                         <div className="py-1">
@@ -153,14 +200,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                               setShowCompanyMenu(false);
                               onOpenCreateNewCompany();
                             }}
-                            className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-slate-800 hover:text-white flex items-center space-x-3 cursor-pointer group transition"
+                            className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center space-x-3 cursor-pointer group transition ${
+                              isLight ? 'hover:bg-slate-100 text-slate-700 hover:text-slate-900' : 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                            }`}
                           >
-                            <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-lg group-hover:bg-indigo-500 group-hover:text-white transition">
+                            <div className="p-1.5 bg-indigo-500/20 text-indigo-500 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition">
                               <PlusCircle className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="font-bold text-slate-100 group-hover:text-indigo-300">Create a New Company...</div>
-                              <div className="text-[10px] text-slate-400">Launch guided Entity Setup wizard</div>
+                              <div className={`font-bold ${isLight ? 'text-slate-800 group-hover:text-indigo-700' : 'text-slate-100 group-hover:text-indigo-300'}`}>Create a New Company...</div>
+                              <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Launch guided Entity Setup wizard</div>
                             </div>
                           </button>
 
@@ -169,28 +218,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                               setShowCompanyMenu(false);
                               onOpenEntitySetup();
                             }}
-                            className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-slate-800 hover:text-white flex items-center space-x-3 cursor-pointer group transition"
+                            className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center space-x-3 cursor-pointer group transition ${
+                              isLight ? 'hover:bg-slate-100 text-slate-700 hover:text-slate-900' : 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                            }`}
                           >
-                            <div className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition">
+                            <div className="p-1.5 bg-emerald-500/20 text-emerald-500 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition">
                               <Sparkles className="w-4 h-4" />
                             </div>
                             <div>
-                              <div className="font-bold text-slate-100 group-hover:text-emerald-300">+ Entity Setup Interview...</div>
-                              <div className="text-[10px] text-slate-400">Add LLC or Org to current file</div>
+                              <div className={`font-bold ${isLight ? 'text-slate-800 group-hover:text-emerald-700' : 'text-slate-100 group-hover:text-emerald-300'}`}>+ Entity Setup Interview...</div>
+                              <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Add LLC or Org to current file</div>
                             </div>
                           </button>
                         </div>
 
-                        <div className="border-t border-slate-800 py-1">
+                        <div className={`border-t py-1 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
                           <button
                             onClick={() => {
                               setShowCompanyMenu(false);
                               handleManualBackup();
                             }}
                             disabled={backingUp}
-                            className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-800 hover:text-white flex items-center space-x-2.5 cursor-pointer text-slate-300"
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center space-x-2.5 cursor-pointer ${
+                              isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-300'
+                            }`}
                           >
-                            <Archive className="w-4 h-4 text-cyan-400" />
+                            <Archive className="w-4 h-4 text-cyan-500" />
                             <span>{backingUp ? 'Creating Backup...' : 'Create Backup Archive (.propbackup)'}</span>
                           </button>
 
@@ -199,9 +252,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                               setShowCompanyMenu(false);
                               onCloseCompany();
                             }}
-                            className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-800 hover:text-rose-300 flex items-center space-x-2.5 cursor-pointer text-slate-300"
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center space-x-2.5 cursor-pointer ${
+                              isLight ? 'hover:bg-rose-50 text-rose-700' : 'hover:bg-slate-800 hover:text-rose-300 text-slate-300'
+                            }`}
                           >
-                            <LogOut className="w-4 h-4 text-rose-400" />
+                            <LogOut className="w-4 h-4 text-rose-500" />
                             <span>Open Company / Switch File...</span>
                           </button>
                         </div>
@@ -211,124 +266,143 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 {isSample && (
-                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
                     Sample
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400">Desktop Pro Edition</p>
+              <p className={brandSubClass}>Desktop Pro Edition</p>
             </div>
           </div>
 
           {/* Navigation Bar - Dynamically scales and fills the available width */}
           <nav className="hidden lg:flex flex-1 items-center justify-center min-w-0 mx-1 xl:mx-3">
-            <div className="flex items-center space-x-1.5 xl:space-x-2 bg-slate-950/85 p-1.5 rounded-2xl border border-slate-750/80 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar max-w-full">
+            <div className={dockContainerClass}>
+              
+              {/* Company Button */}
               <button
                 onClick={() => setShowCompanyMenu(!showCompanyMenu)}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  showCompanyMenu
-                    ? 'bg-gradient-to-b from-indigo-500 to-indigo-600 text-white font-extrabold border border-indigo-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(99,102,241,0.4)] ring-2 ring-indigo-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  showCompanyMenu,
+                  'bg-gradient-to-b from-indigo-500 to-indigo-600 text-white font-extrabold border border-indigo-350 shadow-md ring-2 ring-indigo-400/40',
+                  'text-indigo-700 hover:text-indigo-950 border-indigo-200',
+                  'text-indigo-300 hover:text-white border-indigo-500/40'
+                )}
                 title="Company & Entity Management"
               >
-                <Landmark className="w-4 h-4 text-indigo-400" />
+                <Landmark className={`w-4 h-4 ${showCompanyMenu ? 'text-white' : isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
                 <span>Company ▾</span>
               </button>
 
+              {/* Financial P&L */}
               <button
                 onClick={() => handleNavClick('dashboard', 'Financial P&L')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'dashboard'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'dashboard',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-slate-700 hover:text-slate-950 border-slate-300',
+                  'text-slate-200 hover:text-white border-slate-700/90'
+                )}
               >
-                <BarChart3 className={`w-4 h-4 ${activeTab === 'dashboard' ? 'text-white' : 'text-emerald-400'}`} />
+                <BarChart3 className={`w-4 h-4 ${activeTab === 'dashboard' ? 'text-white' : isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                 <span>Financial P&L</span>
               </button>
 
+              {/* COA */}
               <button
                 onClick={() => handleNavClick('accounts', 'Chart of Accounts')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'accounts'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'accounts',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-slate-700 hover:text-slate-950 border-slate-300',
+                  'text-slate-200 hover:text-white border-slate-700/90'
+                )}
               >
-                <BookOpen className={`w-4 h-4 ${activeTab === 'accounts' ? 'text-white' : 'text-emerald-400'}`} />
+                <BookOpen className={`w-4 h-4 ${activeTab === 'accounts' ? 'text-white' : isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                 <span>COA</span>
               </button>
 
+              {/* Journal */}
               <button
                 onClick={() => handleNavClick('journal', 'General Journal Entries')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'journal'
-                    ? 'bg-gradient-to-b from-cyan-500 to-cyan-600 text-white font-extrabold border border-cyan-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(6,182,212,0.4)] ring-2 ring-cyan-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'journal',
+                  'bg-gradient-to-b from-cyan-500 to-cyan-600 text-white font-extrabold border border-cyan-350 shadow-md ring-2 ring-cyan-400/40',
+                  'text-cyan-800 hover:text-cyan-950 border-cyan-300',
+                  'text-cyan-300 hover:text-white border-cyan-500/40'
+                )}
               >
-                <Scale className={`w-4 h-4 ${activeTab === 'journal' ? 'text-white' : 'text-cyan-400'}`} />
+                <Scale className={`w-4 h-4 ${activeTab === 'journal' ? 'text-white' : isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
                 <span>Journal</span>
               </button>
 
+              {/* Checks */}
               <button
                 onClick={() => handleNavClick('checks', 'Check Register')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'checks'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-emerald-300 hover:text-white border border-emerald-500/40 hover:border-emerald-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'checks',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-emerald-800 hover:text-emerald-950 border-emerald-300',
+                  'text-emerald-300 hover:text-white border-emerald-500/40'
+                )}
               >
-                <CheckSquare className={`w-4 h-4 ${activeTab === 'checks' ? 'text-white' : 'text-emerald-400'}`} />
+                <CheckSquare className={`w-4 h-4 ${activeTab === 'checks' ? 'text-white' : isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                 <span>Checks</span>
               </button>
 
+              {/* Vendors */}
               <button
                 onClick={() => handleNavClick('vendors', 'Vendor Center')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'vendors'
-                    ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-white font-extrabold border border-amber-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(245,158,11,0.4)] ring-2 ring-amber-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-amber-300 hover:text-white border border-amber-500/40 hover:border-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'vendors',
+                  'bg-gradient-to-b from-amber-500 to-amber-600 text-white font-extrabold border border-amber-350 shadow-md ring-2 ring-amber-400/40',
+                  'text-amber-800 hover:text-amber-950 border-amber-300',
+                  'text-amber-300 hover:text-white border-amber-500/40'
+                )}
               >
-                <Users className={`w-4 h-4 ${activeTab === 'vendors' ? 'text-white' : 'text-amber-400'}`} />
+                <Users className={`w-4 h-4 ${activeTab === 'vendors' ? 'text-white' : isLight ? 'text-amber-600' : 'text-amber-400'}`} />
                 <span>Vendors</span>
               </button>
 
+              {/* Import */}
               <button
                 onClick={() => handleNavClick('import', 'Import Statements')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'import'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'import',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-slate-700 hover:text-slate-950 border-slate-300',
+                  'text-slate-200 hover:text-white border-slate-700/90'
+                )}
               >
-                <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'import' ? 'text-white' : 'text-emerald-400'}`} />
+                <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'import' ? 'text-white' : isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                 <span>Import</span>
               </button>
 
+              {/* Transactions */}
               <button
                 onClick={() => handleNavClick('transactions', 'Transactions Register')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'transactions'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'transactions',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-slate-700 hover:text-slate-950 border-slate-300',
+                  'text-slate-200 hover:text-white border-slate-700/90'
+                )}
               >
-                <ListFilter className={`w-4 h-4 ${activeTab === 'transactions' ? 'text-white' : 'text-emerald-400'}`} />
+                <ListFilter className={`w-4 h-4 ${activeTab === 'transactions' ? 'text-white' : isLight ? 'text-teal-600' : 'text-emerald-400'}`} />
                 <span>Transactions</span>
               </button>
 
+              {/* Company/Property Structure */}
               <button
                 onClick={() => handleNavClick('properties', 'Company/Property Structure')}
-                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
-                  activeTab === 'properties'
-                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
-                }`}
+                className={getNavBtnClass(
+                  activeTab === 'properties',
+                  'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-md ring-2 ring-emerald-400/40',
+                  'text-slate-700 hover:text-slate-950 border-slate-300',
+                  'text-slate-200 hover:text-white border-slate-700/90'
+                )}
               >
-                <Layers className={`w-4 h-4 ${activeTab === 'properties' ? 'text-white' : 'text-emerald-400'}`} />
+                <Layers className={`w-4 h-4 ${activeTab === 'properties' ? 'text-white' : isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                 <span>Company/Property Structure</span>
               </button>
             </div>
@@ -341,14 +415,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
-                className="h-11 xl:h-12 flex items-center space-x-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-amber-300 hover:text-white border-slate-700 hover:border-amber-500/50"
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs active:translate-y-0.5 ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300'
+                    : isNavy
+                    ? 'bg-[#111e38] hover:bg-[#16274a] text-amber-300 border-blue-900/60'
+                    : isEmerald
+                    ? 'bg-[#08291e] hover:bg-[#0c392b] text-amber-300 border-emerald-900/60'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-amber-300 hover:text-white border-slate-700 hover:border-amber-500/50'
+                }`}
                 title="Theme Settings (Dark, Light, Navy Executive, Emerald Estate)"
               >
                 <Palette className="w-4 h-4 text-amber-400" />
                 <span className="hidden xl:inline capitalize">
                   {theme === 'dark' ? 'Theme: Dark' : theme === 'light' ? 'Theme: Light' : theme === 'navy' ? 'Theme: Navy' : 'Theme: Emerald'}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <ChevronDown className={`w-3 h-3 ${isLight ? 'text-slate-500' : 'text-slate-400'}`} />
               </button>
 
               {/* Theme Dropdown Menu */}
@@ -358,10 +440,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="fixed inset-0 z-40" 
                     onClick={() => setShowThemeMenu(false)} 
                   />
-                  <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3.5 py-2 border-b border-slate-800">
-                      <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Color Theme</div>
-                      <div className="text-xs text-slate-300 font-medium">Select interface appearance</div>
+                  <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100 border ${
+                    isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-700 text-slate-200'
+                  }`}>
+                    <div className={`px-3.5 py-2 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+                      <div className={`text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Color Theme</div>
+                      <div className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Select interface appearance</div>
                     </div>
                     <div className="py-1">
                       {THEMES.map((t) => {
@@ -373,18 +457,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                               setTheme(t.id);
                               setShowThemeMenu(false);
                             }}
-                            className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between hover:bg-slate-800 hover:text-white cursor-pointer transition ${
-                              isSelected ? 'bg-slate-800/90 font-bold text-emerald-300' : 'text-slate-300'
+                            className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between cursor-pointer transition ${
+                              isSelected
+                                ? isLight ? 'bg-slate-100 font-bold text-emerald-700' : 'bg-slate-800/90 font-bold text-emerald-300'
+                                : isLight ? 'text-slate-700 hover:bg-slate-50' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                             }`}
                           >
                             <div className="flex items-center space-x-2.5">
                               <span className="text-base">{t.icon}</span>
                               <div>
-                                <div className="font-bold text-slate-100">{t.label}</div>
-                                <div className="text-[10px] text-slate-400">{t.desc}</div>
+                                <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{t.label}</div>
+                                <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{t.desc}</div>
                               </div>
                             </div>
-                            {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />}
+                            {isSelected && <Check className="w-4 h-4 text-emerald-500 shrink-0 ml-2" />}
                           </button>
                         );
                       })}
@@ -397,34 +483,38 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Multi-Window Workspace Mode Toggle */}
             <button
               onClick={() => setIsMultiWindowMode(!isMultiWindowMode)}
-              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 ${
-                isMultiWindowMode
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs active:translate-y-0.5 ${
+                isLight
+                  ? isMultiWindowMode
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-400 font-bold'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                  : isMultiWindowMode
                   ? 'bg-gradient-to-b from-emerald-900/60 to-emerald-950/90 text-emerald-300 border-emerald-500/60 hover:border-emerald-400'
                   : 'bg-gradient-to-b from-slate-800 to-slate-850 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
               }`}
               title={isMultiWindowMode ? 'Multi-Window Mode Active (Click to switch to Tabbed Mode)' : 'Switch to Multi-Window Desktop Workspace'}
             >
-              <LayoutGrid className="w-4 h-4 text-emerald-400" />
+              <LayoutGrid className="w-4 h-4 text-emerald-500" />
               <span className="hidden xl:inline">{isMultiWindowMode ? 'Multi-Window' : 'Single View'}</span>
             </button>
 
             {/* Quick Action: Write Check */}
             <button
               onClick={onOpenWriteCheckModal}
-              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border border-emerald-400/80 rounded-xl text-xs font-bold transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_6px_rgba(16,185,129,0.3)] active:translate-y-0.5 cursor-pointer"
+              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border border-emerald-400/80 rounded-xl text-xs font-bold transition-all shadow-sm active:translate-y-0.5 cursor-pointer"
               title="Write Check (QuickBooks Desktop Format)"
             >
-              <CheckSquare className="w-4 h-4 text-emerald-200" />
+              <CheckSquare className="w-4 h-4 text-emerald-100" />
               <span>Write Check</span>
             </button>
 
             {/* Quick Action: Make Journal Entry */}
             <button
               onClick={onOpenMakeJournalModal}
-              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white border border-cyan-400/80 rounded-xl text-xs font-bold transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_6px_rgba(6,182,212,0.3)] active:translate-y-0.5 cursor-pointer"
+              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white border border-cyan-400/80 rounded-xl text-xs font-bold transition-all shadow-sm active:translate-y-0.5 cursor-pointer"
               title="Make General Journal Entry by Date"
             >
-              <Scale className="w-4 h-4 text-cyan-200" />
+              <Scale className="w-4 h-4 text-cyan-100" />
               <span>Journal Entry</span>
             </button>
 
@@ -432,8 +522,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onOpenLicenseModal}
               title="Click to view license & subscription pricing"
-              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl border transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 cursor-pointer ${
-                isExpired
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl border transition-all shadow-2xs active:translate-y-0.5 cursor-pointer ${
+                isLight
+                  ? isExpired
+                    ? 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200'
+                    : isTrial
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
+                    : 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200'
+                  : isExpired
                   ? 'bg-gradient-to-b from-rose-900 to-rose-950 text-rose-200 border-rose-600 hover:border-rose-400'
                   : isTrial
                   ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 text-amber-300 border-amber-600/70 hover:border-amber-400'
@@ -448,9 +544,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onCloseCompany}
               title="Close company and auto-backup on exit"
-              className="h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold text-slate-300 hover:text-rose-200 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-rose-950 hover:to-rose-900 border border-slate-700 hover:border-rose-700/70 rounded-xl transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 cursor-pointer"
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl transition-all shadow-2xs active:translate-y-0.5 cursor-pointer border ${
+                isLight
+                  ? 'text-slate-700 hover:text-rose-700 bg-white hover:bg-rose-50 border-slate-300 hover:border-rose-300'
+                  : 'text-slate-300 hover:text-rose-200 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-rose-950 hover:to-rose-900 border-slate-700 hover:border-rose-700/70'
+              }`}
             >
-              <LogOut className="w-4 h-4 text-rose-400" />
+              <LogOut className="w-4 h-4 text-rose-500" />
               <span className="hidden sm:inline">Close</span>
             </button>
           </div>
@@ -466,30 +566,111 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
 
       {/* Mobile nav (< lg) */}
-      <div className="lg:hidden flex overflow-x-auto no-scrollbar px-3 py-2 space-x-2 border-t border-slate-800 bg-slate-900/95 text-xs">
+      <div className={`lg:hidden flex overflow-x-auto no-scrollbar px-3 py-2 space-x-2 border-t ${
+        isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900/95 border-slate-800 text-slate-200'
+      }`}>
         <button
           onClick={() => {
             const next: AppTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'navy' : theme === 'navy' ? 'emerald' : 'dark';
             setTheme(next);
           }}
-          className="h-9 px-3 rounded-lg whitespace-nowrap bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold flex items-center space-x-1.5 shadow-sm cursor-pointer active:scale-95"
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold flex items-center space-x-1.5 shadow-2xs cursor-pointer active:scale-95 border ${
+            isLight ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+          }`}
           title="Cycle Theme"
         >
-          <Palette className="w-3.5 h-3.5 text-amber-400" />
+          <Palette className="w-3.5 h-3.5 text-amber-500" />
           <span className="capitalize">{theme}</span>
         </button>
-        <button onClick={() => setShowCompanyMenu(!showCompanyMenu)} className="h-9 px-3 rounded-lg whitespace-nowrap bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-bold flex items-center space-x-1.5 shadow-sm cursor-pointer active:scale-95">
-          <Landmark className="w-3.5 h-3.5 text-indigo-400" />
+        <button 
+          onClick={() => setShowCompanyMenu(!showCompanyMenu)} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold flex items-center space-x-1.5 shadow-2xs cursor-pointer active:scale-95 border ${
+            isLight ? 'bg-indigo-50 text-indigo-900 border-indigo-200' : 'bg-indigo-600/30 text-indigo-300 border-indigo-500/40'
+          }`}
+        >
+          <Landmark className="w-3.5 h-3.5 text-indigo-500" />
           <span>Company ▾</span>
         </button>
-        <button onClick={() => handleNavClick('dashboard', 'Financial P&L')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Financial P&L</button>
-        <button onClick={() => handleNavClick('accounts', 'Chart of Accounts')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'accounts' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>COA</button>
-        <button onClick={() => handleNavClick('journal', 'General Journal Entries')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'journal' ? 'bg-cyan-600 text-white border-cyan-400' : 'bg-slate-800 text-cyan-300 border-slate-700'}`}>Journal</button>
-        <button onClick={() => handleNavClick('checks', 'Check Register')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'checks' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-emerald-300 border-slate-700'}`}>Checks</button>
-        <button onClick={() => handleNavClick('vendors', 'Vendor Center')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'vendors' ? 'bg-amber-600 text-white border-amber-400' : 'bg-slate-800 text-amber-300 border-slate-700'}`}>Vendors</button>
-        <button onClick={() => handleNavClick('import', 'Import Statements')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'import' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Import</button>
-        <button onClick={() => handleNavClick('transactions', 'Transactions Register')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'transactions' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Transactions</button>
-        <button onClick={() => handleNavClick('properties', 'Company/Property Structure')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'properties' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Company/Property Structure</button>
+        <button 
+          onClick={() => handleNavClick('dashboard', 'Financial P&L')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'dashboard'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Financial P&L
+        </button>
+        <button 
+          onClick={() => handleNavClick('accounts', 'Chart of Accounts')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'accounts'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          COA
+        </button>
+        <button 
+          onClick={() => handleNavClick('journal', 'General Journal Entries')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'journal'
+              ? 'bg-cyan-600 text-white border-cyan-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Journal
+        </button>
+        <button 
+          onClick={() => handleNavClick('checks', 'Check Register')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'checks'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Checks
+        </button>
+        <button 
+          onClick={() => handleNavClick('vendors', 'Vendor Center')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'vendors'
+              ? 'bg-amber-600 text-white border-amber-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Vendors
+        </button>
+        <button 
+          onClick={() => handleNavClick('import', 'Import Statements')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'import'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Import
+        </button>
+        <button 
+          onClick={() => handleNavClick('transactions', 'Transactions Register')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'transactions'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Transactions
+        </button>
+        <button 
+          onClick={() => handleNavClick('properties', 'Company/Property Structure')} 
+          className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-2xs cursor-pointer ${
+            activeTab === 'properties'
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+          }`}
+        >
+          Company/Property Structure
+        </button>
       </div>
     </header>
   );

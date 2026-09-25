@@ -37,7 +37,7 @@
   color: #0f172a;
 }
 
-/* Surfaces */
+/* Transform dark surface utility classes into clean light cards */
 [data-theme="light"] .bg-slate-950 {
   background-color: #f1f5f9 !important;
 }
@@ -61,38 +61,85 @@
 
 [data-theme="light"] .bg-slate-750,
 [data-theme="light"] .bg-slate-700 {
-  background-color: #e2e8f0 !important;
+  background-color: #f1f5f9 !important;
 }
 
-/* Borders */
+/* Borders in light mode */
 [data-theme="light"] .border-slate-800,
 [data-theme="light"] .border-slate-750,
 [data-theme="light"] .border-slate-700,
 [data-theme="light"] .border-slate-800\/80,
 [data-theme="light"] .border-slate-700\/80,
 [data-theme="light"] .border-slate-700\/90 {
-  border-color: #cbd5e1 !important;
+  border-color: #e2e8f0 !important;
 }
 
-/* Text */
-[data-theme="light"] .text-white {
+/* Slate gradients turn into soft light gradients in light mode */
+[data-theme="light"] .from-slate-950,
+[data-theme="light"] .from-slate-900,
+[data-theme="light"] .from-slate-850,
+[data-theme="light"] .from-slate-800 {
+  --tw-gradient-from: #f8fafc !important;
+}
+
+[data-theme="light"] .to-slate-950,
+[data-theme="light"] .to-slate-900,
+[data-theme="light"] .to-slate-850,
+[data-theme="light"] .to-slate-800 {
+  --tw-gradient-to: #f1f5f9 !important;
+}
+
+[data-theme="light"] .via-slate-950,
+[data-theme="light"] .via-slate-900,
+[data-theme="light"] .via-slate-850,
+[data-theme="light"] .via-slate-800 {
+  --tw-gradient-via: #f1f5f9 !important;
+}
+
+/* Crisp text contrast on light cards */
+[data-theme="light"] .bg-white .text-white,
+[data-theme="light"] .bg-slate-50 .text-white,
+[data-theme="light"] .bg-slate-100 .text-white,
+[data-theme="light"] .bg-slate-900 .text-white,
+[data-theme="light"] .bg-slate-850 .text-white,
+[data-theme="light"] .bg-slate-800 .text-white {
   color: #0f172a !important;
 }
 
-[data-theme="light"] .text-slate-100,
-[data-theme="light"] .text-slate-200 {
+[data-theme="light"] .bg-white .text-slate-100,
+[data-theme="light"] .bg-white .text-slate-200,
+[data-theme="light"] .bg-slate-50 .text-slate-100,
+[data-theme="light"] .bg-slate-50 .text-slate-200,
+[data-theme="light"] .bg-slate-100 .text-slate-100,
+[data-theme="light"] .bg-slate-100 .text-slate-200,
+[data-theme="light"] .bg-slate-900 .text-slate-100,
+[data-theme="light"] .bg-slate-900 .text-slate-200,
+[data-theme="light"] .bg-slate-850 .text-slate-100,
+[data-theme="light"] .bg-slate-850 .text-slate-200,
+[data-theme="light"] .bg-slate-800 .text-slate-100,
+[data-theme="light"] .bg-slate-800 .text-slate-200 {
   color: #1e293b !important;
 }
 
-[data-theme="light"] .text-slate-300 {
+[data-theme="light"] .bg-white .text-slate-300,
+[data-theme="light"] .bg-slate-50 .text-slate-300,
+[data-theme="light"] .bg-slate-100 .text-slate-300,
+[data-theme="light"] .bg-slate-900 .text-slate-300,
+[data-theme="light"] .bg-slate-850 .text-slate-300,
+[data-theme="light"] .bg-slate-800 .text-slate-300 {
   color: #334155 !important;
 }
 
-[data-theme="light"] .text-slate-400 {
+[data-theme="light"] .bg-white .text-slate-400,
+[data-theme="light"] .bg-slate-50 .text-slate-400,
+[data-theme="light"] .bg-slate-100 .text-slate-400,
+[data-theme="light"] .bg-slate-900 .text-slate-400,
+[data-theme="light"] .bg-slate-850 .text-slate-400,
+[data-theme="light"] .bg-slate-800 .text-slate-400 {
   color: #64748b !important;
 }
 
-/* Retain high-contrast white text on colorful buttons and badges */
+/* Explicitly preserve high-contrast white text on colorful buttons and badges */
 [data-theme="light"] [class*="bg-emerald-"] .text-white,
 [data-theme="light"] [class*="from-emerald-"] .text-white,
 [data-theme="light"] [class*="bg-indigo-"] .text-white,
@@ -103,20 +150,24 @@
 [data-theme="light"] [class*="from-rose-"] .text-white,
 [data-theme="light"] [class*="bg-amber-"] .text-white,
 [data-theme="light"] [class*="from-amber-"] .text-white,
+[data-theme="light"] [class*="bg-blue-"] .text-white,
+[data-theme="light"] [class*="from-blue-"] .text-white,
 [data-theme="light"] button[class*="bg-emerald-"],
 [data-theme="light"] button[class*="bg-indigo-"],
 [data-theme="light"] button[class*="bg-cyan-"],
 [data-theme="light"] button[class*="bg-rose-"],
+[data-theme="light"] button[class*="from-emerald-"],
+[data-theme="light"] button[class*="from-indigo-"],
+[data-theme="light"] button[class*="from-cyan-"],
+[data-theme="light"] button[class*="from-rose-"],
 [data-theme="light"] [class*="from-emerald-"] span,
 [data-theme="light"] [class*="from-indigo-"] span,
 [data-theme="light"] [class*="from-cyan-"] span,
 [data-theme="light"] [class*="from-rose-"] span,
-[data-theme="light"] [class*="from-amber-"] span,
 [data-theme="light"] [class*="from-emerald-"] svg,
 [data-theme="light"] [class*="from-indigo-"] svg,
 [data-theme="light"] [class*="from-cyan-"] svg,
-[data-theme="light"] [class*="from-rose-"] svg,
-[data-theme="light"] [class*="from-amber-"] svg {
+[data-theme="light"] [class*="from-rose-"] svg {
   color: #ffffff !important;
 }
 
