@@ -1943,28 +1943,36 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                 return (
                   <div className="space-y-4">
                     {/* Class Structure Notation Display */}
-                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 border border-indigo-900/50 shadow-md space-y-3">
+                    <div className="bg-slate-900 text-white rounded-2xl p-5 border-2 border-indigo-500/50 shadow-md space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Layers className="w-5 h-5 text-indigo-400" />
-                          <h4 className="font-extrabold text-sm text-white">Class Structure Architecture</h4>
+                        <div className="flex items-center space-x-2.5">
+                          <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-xs">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <h4 className="font-black text-sm text-white">Class Structure Architecture</h4>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-900/80 text-indigo-300 border border-indigo-700/60 font-mono">
+                        <span className="text-[10px] font-black px-2.5 py-1 rounded bg-indigo-950 text-indigo-200 border border-indigo-500/60 font-mono uppercase tracking-wider">
                           Hierarchy View
                         </span>
                       </div>
 
-                      <div className="p-3 bg-black/40 rounded-xl border border-white/10 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Structure Notation:</span>
+                      <div className="p-3.5 bg-slate-950/90 rounded-xl border border-indigo-500/40 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-amber-300 font-black uppercase text-[11px] tracking-wide">Structure Notation:</span>
                         <span className="font-black text-white">{hasMultipleLLCs ? (portfolioName || 'Rental Portfolio') : (entityName || 'Rental Entity')}</span>
-                        <span className="text-indigo-400 font-normal">&gt;</span>
-                        <span className="text-emerald-400 font-bold">{totalLLCs} LLC{totalLLCs === 1 ? '' : 's'}</span>
-                        <span className="text-indigo-400 font-normal">&gt;</span>
-                        <span className="text-amber-300 font-bold">{totalHoldings} Sub-Class Holding{totalHoldings === 1 ? '' : 's'} under each LLC</span>
+                        <span className="text-indigo-300 font-bold">&gt;</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-indigo-900/90 text-indigo-100 font-black text-xs border border-indigo-400/60">
+                          {totalLLCs} LLC{totalLLCs === 1 ? '' : 's'}
+                        </span>
+                        <span className="text-indigo-300 font-bold">&gt;</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-900/90 text-emerald-100 font-black text-xs border border-emerald-400/60">
+                          {totalHoldings} Sub-Class Holding{totalHoldings === 1 ? '' : 's'} under each LLC
+                        </span>
                         {(includeCommonClass || allReviewEntities.some(e => e.entity_type === 'COMMON')) && (
                           <>
-                            <span className="text-indigo-400 font-normal">+</span>
-                            <span className="text-indigo-300 font-bold">1 Common Expense Class (Common to all)</span>
+                            <span className="text-indigo-300 font-bold">+</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-900/90 text-purple-100 font-black text-xs border border-purple-400/60">
+                              1 Common Expense Class (Common to all)
+                            </span>
                           </>
                         )}
                       </div>

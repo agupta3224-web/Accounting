@@ -394,6 +394,7 @@ export const MultiWindowManager: React.FC<MultiWindowManagerProps> = ({
             classes={classes}
             properties={properties}
             onRefresh={onRefreshMetadata}
+            theme={theme}
           />
         );
       default:

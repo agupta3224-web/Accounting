@@ -345,6 +345,7 @@ export function App() {
               classes={classes}
               properties={properties}
               onRefresh={loadMetadata}
+              theme={theme}
             />
           )}
         </main>

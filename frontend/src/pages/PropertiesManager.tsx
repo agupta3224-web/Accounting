@@ -3,7 +3,7 @@ import {
   Building, Plus, Layers, MapPin, CheckCircle2, AlertCircle, 
   ChevronRight, ChevronDown, Landmark, Sparkles, Home, Shield
 } from 'lucide-react';
-import { Company, ClassEntity, Property, HierarchyCompany, US_STATES } from '../types';
+import { Company, ClassEntity, Property, HierarchyCompany, US_STATES, AppTheme } from '../types';
 import { api } from '../services/api';
 import { EntitySetupWizardModal } from '../components/entities/EntitySetupWizardModal';
 
@@ -12,19 +12,25 @@ interface PropertiesManagerProps {
   classes: ClassEntity[];
   companies: Company[];
   onRefresh: () => void;
+  theme?: AppTheme;
 }
 
 export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
   properties,
   classes,
   companies,
-  onRefresh
+  onRefresh,
+  theme = 'dark'
 }) => {
   const [hierarchy, setHierarchy] = useState<HierarchyCompany[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedCompanies, setExpandedCompanies] = useState<Record<number, boolean>>({});
   const [expandedClasses, setExpandedClasses] = useState<Record<number, boolean>>({});
   const [isEntityWizardOpen, setIsEntityWizardOpen] = useState(false);
+
+  const isLight = theme === 'light';
+  const isNavy = theme === 'navy';
+  const isEmerald = theme === 'emerald';
 
   // Modal / Form modes: 'NONE' | 'COMPANY' | 'CLASS' | 'SUBCLASS'
   const [activeForm, setActiveForm] = useState<'NONE' | 'COMPANY' | 'CLASS' | 'SUBCLASS'>('NONE');
@@ -238,26 +244,77 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
       </div>
 
       {/* Class Structure Architecture Display Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 rounded-xl shadow-xs border border-indigo-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-indigo-500/20 text-indigo-300 rounded-xl border border-indigo-500/30">
-            <Layers className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Class Structure Architecture</div>
-            <div className="text-sm font-black text-white flex flex-wrap items-center gap-2">
-              <span>{companies[0]?.name || 'Rental Portfolio'}</span>
-              <span className="text-indigo-400 font-normal">&gt;</span>
-              <span className="text-emerald-400 font-bold">{classes.length} LLC{classes.length === 1 ? '' : 's'}</span>
-              <span className="text-indigo-400 font-normal">&gt;</span>
-              <span className="text-amber-300 font-bold">{properties.length} Sub-Class Holding{properties.length === 1 ? '' : 's'}</span>
+      {isLight ? (
+        <div className="bg-gradient-to-r from-purple-50 via-indigo-50/80 to-purple-50 text-slate-900 p-4 rounded-xl shadow-xs border-2 border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs shrink-0">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-indigo-950">
+                Class Structure Architecture
+              </div>
+              <div className="text-sm font-black text-slate-900 flex flex-wrap items-center gap-2 mt-0.5">
+                <span className="text-slate-950 font-black">{companies[0]?.name || 'Rental Portfolio'}</span>
+                <span className="text-indigo-500 font-black">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-950 font-black text-xs border border-indigo-300 shadow-2xs">
+                  {classes.length} LLC{classes.length === 1 ? '' : 's'}
+                </span>
+                <span className="text-indigo-500 font-black">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
+                  {properties.length} Sub-Class Holding{properties.length === 1 ? '' : 's'}
+                </span>
+              </div>
             </div>
           </div>
+          <div className="bg-white border-2 border-indigo-200/90 px-3.5 py-2 rounded-xl shadow-2xs text-xs font-semibold text-slate-800 shrink-0 flex flex-wrap items-center gap-1.5">
+            <span className="font-black text-indigo-950 uppercase tracking-wide text-[11px] mr-1">Example:</span>
+            <span className="font-mono text-emerald-800 font-black">Rental Portfolio</span>
+            <span className="text-indigo-500 font-bold">&gt;</span>
+            <span className="font-mono text-indigo-900 font-black">2 LLCs</span>
+            <span className="text-indigo-500 font-bold">&gt;</span>
+            <span className="font-mono text-emerald-800 font-black">Holdings under each LLC</span>
+          </div>
         </div>
-        <div className="text-xs text-slate-300 font-medium bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 shrink-0">
-          Example: <span className="font-mono text-emerald-300 font-bold">Rental Portfolio &gt; 2 LLCs &gt; Holdings under each LLC</span>
+      ) : (
+        <div className={`p-4 rounded-xl shadow-md border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white ${
+          isNavy
+            ? 'bg-gradient-to-r from-[#0d1629] via-[#16203a] to-[#0d1629] border-indigo-500/40'
+            : isEmerald
+            ? 'bg-gradient-to-r from-[#062117] via-[#0b3324] to-[#062117] border-emerald-500/40'
+            : 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/40'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs shrink-0">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-indigo-200">
+                Class Structure Architecture
+              </div>
+              <div className="text-sm font-black text-white flex flex-wrap items-center gap-2 mt-0.5">
+                <span className="text-white font-black">{companies[0]?.name || 'Rental Portfolio'}</span>
+                <span className="text-indigo-300 font-bold">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-indigo-900/90 text-indigo-100 font-black text-xs border border-indigo-400/60 shadow-xs">
+                  {classes.length} LLC{classes.length === 1 ? '' : 's'}
+                </span>
+                <span className="text-indigo-300 font-bold">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-900/90 text-emerald-100 font-black text-xs border border-emerald-400/60 shadow-xs">
+                  {properties.length} Sub-Class Holding{properties.length === 1 ? '' : 's'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-900/95 border-2 border-indigo-500/50 px-3.5 py-2 rounded-xl shadow-xs text-xs font-semibold text-slate-100 shrink-0 flex flex-wrap items-center gap-1.5">
+            <span className="font-black text-amber-300 uppercase tracking-wide text-[11px] mr-1">Example:</span>
+            <span className="font-mono text-emerald-300 font-black">Rental Portfolio</span>
+            <span className="text-indigo-300 font-bold">&gt;</span>
+            <span className="font-mono text-indigo-200 font-black">2 LLCs</span>
+            <span className="text-indigo-300 font-bold">&gt;</span>
+            <span className="font-mono text-emerald-300 font-black">Holdings under each LLC</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Summary KPI Pills */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
