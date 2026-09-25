@@ -28,7 +28,8 @@ import {
   CheckRecord, 
   JournalEntry,
   WorkspaceWindow,
-  WindowType
+  WindowType,
+  AppTheme
 } from './types';
 import { api } from './services/api';
 
@@ -36,6 +37,20 @@ export function App() {
   const [session, setSession] = useState<SystemSession | null>(null);
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
+
+  // Appearance Theme state (dark, light, navy, emerald)
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    const saved = localStorage.getItem('propbooks_theme');
+    if (saved === 'dark' || saved === 'light' || saved === 'navy' || saved === 'emerald') {
+      return saved as AppTheme;
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('propbooks_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // View mode: Single Tab vs Multi-Window Workspace
   const [isMultiWindowMode, setIsMultiWindowMode] = useState(true);
@@ -236,6 +251,8 @@ export function App() {
         onOpenLicenseModal={() => setIsLicenseModalOpen(true)}
         onOpenCreateNewCompany={handleOpenCreateNewCompany}
         onOpenEntitySetup={handleOpenEntitySetup}
+        theme={theme}
+        setTheme={setTheme}
       />
 
       {/* Main Workspace Area (Full-Screen Multi-Window Mode vs Single-Tab View) */}
@@ -255,6 +272,7 @@ export function App() {
           categories={categories}
           activeCompanyName={session.active_company_name || 'Active Company'}
           onRefreshMetadata={loadMetadata}
+          theme={theme}
         />
       ) : (
         <main className="flex-1 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 w-full">

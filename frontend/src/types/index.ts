@@ -1,3 +1,5 @@
+export type AppTheme = 'dark' | 'light' | 'navy' | 'emerald';
+
 export interface LicensePricing {
   trial_days: number;
   monthly_promo_price: number;

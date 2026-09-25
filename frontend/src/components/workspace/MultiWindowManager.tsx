@@ -20,7 +20,7 @@ import {
   RotateCcw,
   Landmark
 } from 'lucide-react';
-import { WorkspaceWindow, WindowType, Company, Property, ClassEntity, Category, Vendor, CheckRecord } from '../../types';
+import { WorkspaceWindow, WindowType, Company, Property, ClassEntity, Category, Vendor, CheckRecord, AppTheme } from '../../types';
 import { FinancialDashboard } from '../../pages/FinancialDashboard';
 import { ChartOfAccounts } from '../../pages/ChartOfAccounts';
 import { JournalEntriesPage } from '../../pages/JournalEntriesPage';
@@ -47,6 +47,7 @@ interface MultiWindowManagerProps {
   categories: Category[];
   activeCompanyName: string;
   onRefreshMetadata: () => void;
+  theme?: AppTheme;
 }
 
 export const MultiWindowManager: React.FC<MultiWindowManagerProps> = ({
@@ -63,7 +64,8 @@ export const MultiWindowManager: React.FC<MultiWindowManagerProps> = ({
   properties,
   categories,
   activeCompanyName,
-  onRefreshMetadata
+  onRefreshMetadata,
+  theme = 'dark'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -459,7 +461,15 @@ export const MultiWindowManager: React.FC<MultiWindowManagerProps> = ({
       {/* The Floating Canvas Workspace */}
       <div 
         ref={containerRef}
-        className="relative flex-1 w-full h-full bg-slate-950 overflow-hidden bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]"
+        className={`relative flex-1 w-full h-full overflow-hidden [background-size:24px_24px] ${
+          theme === 'light'
+            ? 'bg-slate-100 bg-[radial-gradient(#cbd5e1_1.5px,transparent_1.5px)]'
+            : theme === 'navy'
+            ? 'bg-[#080e1e] bg-[radial-gradient(#1e3a6a_1.5px,transparent_1.5px)]'
+            : theme === 'emerald'
+            ? 'bg-[#03140e] bg-[radial-gradient(#145942_1.5px,transparent_1.5px)]'
+            : 'bg-slate-950 bg-[radial-gradient(#1e293b_1px,transparent_1px)]'
+        }`}
       >
         {windows.map((win) => {
           const isActive = activeWindowId === win.id;

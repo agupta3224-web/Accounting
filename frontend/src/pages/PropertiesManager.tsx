@@ -347,6 +347,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
           )}
 
           {/* Form 1: Company */}
+          {/* Form 1: Company */}
           {activeForm === 'COMPANY' && (
             <form onSubmit={handleCreateCompany} className="space-y-4 max-w-xl">
               <div>
@@ -356,7 +357,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   placeholder="e.g., Apex Real Estate Holdings Inc."
                   value={compName}
                   onChange={e => setCompName(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-2xs"
                   required
                 />
               </div>
@@ -369,7 +370,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                     placeholder="e.g., 84-2938102"
                     value={compEin}
                     onChange={e => setCompEin(e.target.value)}
-                    className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                    className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                   />
                 </div>
                 <div>
@@ -379,7 +380,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                     placeholder="e.g., Parent holding company"
                     value={compNotes}
                     onChange={e => setCompNotes(e.target.value)}
-                    className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                    className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                   />
                 </div>
               </div>
@@ -388,14 +389,14 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveForm('NONE')}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm"
+                  className="px-5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm cursor-pointer"
                 >
                   {formLoading ? 'Creating Company...' : 'Save Company'}
                 </button>
@@ -411,12 +412,12 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                 <select
                   value={selectedCompId}
                   onChange={e => setSelectedCompId(Number(e.target.value))}
-                  className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden focus:ring-2 focus:ring-indigo-500"
+                  className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-2xs"
                   required
                 >
-                  <option value="">-- Choose Company --</option>
+                  <option value="" className="text-slate-900 bg-white">-- Choose Company --</option>
                   {companies.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id} className="text-slate-900 bg-white">{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -428,7 +429,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   placeholder="e.g., Sunset Holdings LLC, Depot Investments LLC"
                   value={llcName}
                   onChange={e => setLlcName(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden focus:ring-2 focus:ring-indigo-500"
+                  className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-2xs"
                   required
                 />
               </div>
@@ -440,7 +441,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   placeholder="e.g., Special purpose entity or shared overhead bucket"
                   value={llcDesc}
                   onChange={e => setLlcDesc(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                  className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-2xs"
                 />
               </div>
 
@@ -461,7 +462,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   />
                   <div className="text-xs">
                     <span className="font-bold text-slate-900">Common Class (Shared Portfolio / Company Expenses)</span>
-                    <span className="block text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                    <span className="block text-[11px] text-slate-600 leading-relaxed mt-0.5">
                       Check this for unallocated overhead expenses (e.g. telephone bill, corporate tax filing, software tools) that cannot be classified to any one LLC. Automatically attaches <strong>"Portfolio / Company Overhead"</strong> subclass.
                     </span>
                   </div>
@@ -472,14 +473,14 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveForm('NONE')}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm cursor-pointer"
                 >
                   {formLoading ? 'Creating Class...' : 'Save Class (LLC)'}
                 </button>
@@ -496,12 +497,12 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   <select
                     value={selectedClassId}
                     onChange={e => setSelectedClassId(Number(e.target.value))}
-                    className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-2xs"
                     required
                   >
-                    <option value="">-- Choose Class (LLC) --</option>
+                    <option value="" className="text-slate-900 bg-white">-- Choose Class (LLC) --</option>
                     {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.company_name})</option>
+                      <option key={c.id} value={c.id} className="text-slate-900 bg-white">{c.name} ({c.company_name})</option>
                     ))}
                   </select>
                 </div>
@@ -513,7 +514,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                     placeholder="e.g., 2908 Depot, Sunset Palms Apartments"
                     value={subclassName}
                     onChange={e => setSubclassName(e.target.value)}
-                    className="w-full text-xs font-bold rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    className="w-full text-xs font-bold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-2xs"
                     required
                   />
                 </div>
@@ -534,7 +535,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       placeholder="e.g., 2908 Depot Rd"
                       value={addr1}
                       onChange={e => setAddr1(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                      className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                       required
                     />
                   </div>
@@ -545,7 +546,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       placeholder="e.g., Suite 100 / Apt 4B"
                       value={addr2}
                       onChange={e => setAddr2(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                      className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                     />
                   </div>
                 </div>
@@ -558,7 +559,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       placeholder="Austin"
                       value={city}
                       onChange={e => setCity(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                      className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                       required
                     />
                   </div>
@@ -567,11 +568,11 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                     <select
                       value={state}
                       onChange={e => setState(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden font-medium"
+                      className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 outline-hidden shadow-2xs"
                       required
                     >
                       {US_STATES.map(st => (
-                        <option key={st.code} value={st.code}>{st.name} ({st.code})</option>
+                        <option key={st.code} value={st.code} className="text-slate-900 bg-white">{st.name} ({st.code})</option>
                       ))}
                     </select>
                   </div>
@@ -582,7 +583,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       placeholder="78704"
                       value={zipCode}
                       onChange={e => setZipCode(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden font-mono"
+                      className="w-full text-xs font-mono font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                       required
                     />
                   </div>
@@ -597,7 +598,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       placeholder="e.g. 500000"
                       value={acqCost}
                       onChange={e => setAcqCost(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                      className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                     />
                   </div>
                   <div>
@@ -606,7 +607,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                       type="date"
                       value={acqDate}
                       onChange={e => setAcqDate(e.target.value)}
-                      className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                      className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden shadow-2xs"
                     />
                   </div>
                 </div>
@@ -618,13 +619,13 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   <select
                     value={propType}
                     onChange={e => setPropType(e.target.value)}
-                    className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
+                    className="w-full text-xs font-semibold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 outline-hidden shadow-2xs"
                   >
-                    <option value="Commercial / Multi-Unit">Commercial / Multi-Unit</option>
-                    <option value="Multi-Family">Multi-Family</option>
-                    <option value="Single-Family">Single-Family</option>
-                    <option value="Duplex">Duplex</option>
-                    <option value="Short-Term Rental">Short-Term Rental</option>
+                    <option value="Commercial / Multi-Unit" className="text-slate-900 bg-white">Commercial / Multi-Unit</option>
+                    <option value="Multi-Family" className="text-slate-900 bg-white">Multi-Family</option>
+                    <option value="Single-Family" className="text-slate-900 bg-white">Single-Family</option>
+                    <option value="Duplex" className="text-slate-900 bg-white">Duplex</option>
+                    <option value="Short-Term Rental" className="text-slate-900 bg-white">Short-Term Rental</option>
                   </select>
                 </div>
 
@@ -635,7 +636,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                     min="1"
                     value={propUnits}
                     onChange={e => setPropUnits(Number(e.target.value))}
-                    className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden font-mono"
+                    className="w-full text-xs font-mono font-bold rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 outline-hidden shadow-2xs"
                     required
                   />
                 </div>
