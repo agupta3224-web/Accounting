@@ -89,6 +89,10 @@ class ClassCreate(BaseModel):
     name: str
     company_id: Optional[int] = None
     description: Optional[str] = None
+    entity_type: Optional[str] = "LLC"
+    tax_classification: Optional[str] = None
+    create_default_property: Optional[bool] = False
+    default_property_name: Optional[str] = None
 
 class PropertyCreate(BaseModel):
     name: str
@@ -157,6 +161,11 @@ class EntityInterviewPayload(BaseModel):
     portfolio_notes: Optional[str] = None
     company_id: Optional[int] = None
     create_new_company_file: bool = False
+
+    # Common Portfolio / Company Expense Class (Common to all)
+    include_common_class: bool = False
+    common_class_name: Optional[str] = "Portfolio / Company Expense"
+    common_property_name: Optional[str] = "Portfolio / Company Overhead"
 
     # Chart of Accounts Choice
     coa_mode: Optional[str] = "DEFAULT"  # "DEFAULT" or "CUSTOM"
@@ -537,14 +546,35 @@ def get_classes(company_id: Optional[int] = None, db: Session = Depends(get_db))
 
 @app.post("/api/classes")
 def create_class(c_in: ClassCreate, db: Session = Depends(get_db)):
+    ent_type = c_in.entity_type or ("COMMON" if "COMMON" in c_in.name.upper() or "PORTFOLIO" in c_in.name.upper() else "LLC")
+    tax_class = c_in.tax_classification or ("PORTFOLIO_OVERHEAD" if ent_type == "COMMON" else None)
     c = ClassEntity(
         name=c_in.name,
         company_id=c_in.company_id,
-        description=c_in.description
+        description=c_in.description,
+        entity_type=ent_type,
+        tax_classification=tax_class
     )
     db.add(c)
     db.commit()
     db.refresh(c)
+
+    if c_in.create_default_property:
+        prop_name = (c_in.default_property_name or f"{c_in.name} Overhead").strip()
+        prop = Property(
+            class_id=c.id,
+            name=prop_name,
+            address_line1="Portfolio-Wide Overhead",
+            city="Corporate",
+            state="US",
+            zip_code="00000",
+            property_type="Common Overhead",
+            units_count=0
+        )
+        db.add(prop)
+        db.commit()
+        db.refresh(prop)
+
     return c.to_dict()
 
 # --- Entity Setup Interview Wizard Endpoint ---
@@ -761,6 +791,48 @@ def _persist_entity_interview_records(payload: EntityInterviewPayload, db: Sessi
             db.commit()
             db.refresh(new_prop)
             created_properties.append(new_prop)
+
+    # 3.5. Process Common Portfolio / Company Overhead Class (Common to all)
+    if payload.include_common_class:
+        common_name = (payload.common_class_name or "Portfolio / Company Expense").strip()
+        common_prop_name = (payload.common_property_name or "Portfolio / Company Overhead").strip()
+
+        # Check if this common class already exists in target company
+        existing_common = db.query(ClassEntity).filter(
+            ClassEntity.company_id == target_company_id,
+            ClassEntity.name == common_name
+        ).first()
+
+        if not existing_common:
+            common_class = ClassEntity(
+                company_id=target_company_id,
+                name=common_name,
+                description="Common to all - Shared portfolio/company expenses not classified to any single LLC or property (e.g. telephone, software, legal, management)",
+                entity_type="COMMON",
+                tax_classification="PORTFOLIO_OVERHEAD",
+                tax_form="N/A",
+                ein=payload.portfolio_ein or None
+            )
+            db.add(common_class)
+            db.commit()
+            db.refresh(common_class)
+            created_classes.append(common_class)
+
+            # Create default common overhead sub-class property under this class
+            common_prop = Property(
+                class_id=common_class.id,
+                name=common_prop_name,
+                address_line1="Portfolio-Wide Overhead",
+                city="Corporate",
+                state="US",
+                zip_code="00000",
+                property_type="Common Overhead",
+                units_count=0
+            )
+            db.add(common_prop)
+            db.commit()
+            db.refresh(common_prop)
+            created_properties.append(common_prop)
 
     # 4. Process optional initial bank opening balance
     if payload.initial_bank_opening_balance is not None and payload.initial_bank_opening_balance > 0:

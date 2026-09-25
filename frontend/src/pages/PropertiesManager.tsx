@@ -38,6 +38,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
   const [selectedCompId, setSelectedCompId] = useState<number | ''>('');
   const [llcName, setLlcName] = useState('');
   const [llcDesc, setLlcDesc] = useState('');
+  const [isCommonClass, setIsCommonClass] = useState(false);
 
   // Form states: Sub Class / Property (with Address Form)
   const [selectedClassId, setSelectedClassId] = useState<number | ''>('');
@@ -109,7 +110,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!llcName.trim() || !selectedCompId) {
-      setFormError('Please select a Company and provide an LLC Name.');
+      setFormError('Please select a Company and provide a Class or LLC Name.');
       return;
     }
     try {
@@ -118,11 +119,16 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
       await api.createClass({
         name: llcName.trim(),
         company_id: Number(selectedCompId),
-        description: llcDesc.trim()
+        description: llcDesc.trim() || (isCommonClass ? 'Shared portfolio/company expenses not classified to any single LLC or property' : undefined),
+        entity_type: isCommonClass ? 'COMMON' : 'LLC',
+        tax_classification: isCommonClass ? 'PORTFOLIO_OVERHEAD' : undefined,
+        create_default_property: isCommonClass,
+        default_property_name: isCommonClass ? 'Portfolio / Company Overhead' : undefined
       });
-      setFormSuccess(`Class/LLC "${llcName}" created successfully!`);
+      setFormSuccess(`Class "${llcName}" created successfully!`);
       setLlcName('');
       setLlcDesc('');
+      setIsCommonClass(false);
       setTimeout(() => { setFormSuccess(null); setActiveForm('NONE'); }, 1200);
       onRefresh();
     } catch (err: any) {
@@ -428,14 +434,38 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">LLC Description / Purpose</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Description / Purpose</label>
                 <input
                   type="text"
-                  placeholder="e.g., Special purpose entity for central Texas assets"
+                  placeholder="e.g., Special purpose entity or shared overhead bucket"
                   value={llcDesc}
                   onChange={e => setLlcDesc(e.target.value)}
                   className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white outline-hidden"
                 />
+              </div>
+
+              <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-1.5">
+                <label className="flex items-start space-x-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isCommonClass}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setIsCommonClass(checked);
+                      if (checked && (!llcName.trim() || llcName === 'Sunset Holdings LLC')) {
+                        setLlcName('Portfolio / Company Expense');
+                        setLlcDesc('Shared portfolio/company expenses (e.g. telephone, software, legal, corporate overhead)');
+                      }
+                    }}
+                    className="w-4 h-4 mt-0.5 text-indigo-600 rounded focus:ring-indigo-500"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900">Common Class (Shared Portfolio / Company Expenses)</span>
+                    <span className="block text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                      Check this for unallocated overhead expenses (e.g. telephone bill, corporate tax filing, software tools) that cannot be classified to any one LLC. Automatically attaches <strong>"Portfolio / Company Overhead"</strong> subclass.
+                    </span>
+                  </div>
+                </label>
               </div>
 
               <div className="flex justify-end space-x-2 pt-2">

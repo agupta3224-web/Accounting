@@ -164,7 +164,7 @@ export interface PropertyItemPayload {
 
 export interface EntityItemPayload {
   entity_name: string;
-  entity_type: 'CORP' | 'LLC' | 'SELF_EMPLOYED';
+  entity_type: 'CORP' | 'LLC' | 'SELF_EMPLOYED' | 'COMMON';
   tax_classification?: string;
   tax_form?: string;
   ein?: string;
@@ -192,11 +192,14 @@ export interface EntityInterviewPayload {
   portfolio_notes?: string;
   company_id?: number;
   create_new_company_file?: boolean;
+  include_common_class?: boolean;
+  common_class_name?: string;
+  common_property_name?: string;
   coa_mode?: 'DEFAULT' | 'CUSTOM';
   entities?: EntityItemPayload[];
 
   entity_name?: string;
-  entity_type: 'CORP' | 'LLC' | 'SELF_EMPLOYED';
+  entity_type: 'CORP' | 'LLC' | 'SELF_EMPLOYED' | 'COMMON';
   tax_classification?: string;
   tax_form?: string;
   ein?: string;

@@ -546,5 +546,116 @@ def test_wizard_with_initial_bank_opening_balance():
             client.delete(f"/api/system/companies/{comp_key}")
 
 
+def test_wizard_common_portfolio_expense_class_creation():
+    """Test creating a portfolio setup with a shared common expense class (for telephone, legal, software)."""
+    payload = {
+        "is_portfolio": True,
+        "portfolio_name": "Unified Apex Holdings LLC",
+        "portfolio_ein": "88-1234567",
+        "entity_name": "Apex Commercial LLC",
+        "entity_type": "LLC",
+        "tax_classification": "MULTI_MEMBER",
+        "include_common_class": True,
+        "common_class_name": "Portfolio / Company Expense",
+        "common_property_name": "Portfolio / Company Overhead",
+        "properties": [
+            {
+                "name": "1200 Market Center",
+                "address_line1": "1200 Market St",
+                "city": "Denver",
+                "state": "CO",
+                "zip_code": "80202",
+                "property_type": "Commercial",
+                "units_count": 10
+            }
+        ]
+    }
+
+    res = client.post("/api/entity-wizard/setup", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+
+    # Query all classes for the company
+    comp_id = data["company"]["id"]
+    classes_res = client.get(f"/api/classes?company_id={comp_id}")
+    assert classes_res.status_code == 200
+    classes = classes_res.json()
+    
+    # Verify primary operating LLC class exists
+    primary_cls = next((c for c in classes if c["name"] == "Apex Commercial LLC"), None)
+    assert primary_cls is not None
+    assert primary_cls["entity_type"] == "LLC"
+
+    # Verify Common Portfolio / Company Expense class exists
+    common_cls = next((c for c in classes if c["name"] == "Portfolio / Company Expense"), None)
+    assert common_cls is not None
+    assert common_cls["entity_type"] == "COMMON"
+    assert common_cls["tax_classification"] == "PORTFOLIO_OVERHEAD"
+    assert "Shared portfolio/company expenses" in common_cls.get("description", "")
+
+    # Query properties under the common class
+    props_res = client.get(f"/api/properties?class_id={common_cls['id']}")
+    assert props_res.status_code == 200
+    common_props = props_res.json()
+    assert len(common_props) >= 1
+    overhead_prop = next((p for p in common_props if p["name"] == "Portfolio / Company Overhead"), None)
+    assert overhead_prop is not None
+    assert overhead_prop["property_type"] == "Common Overhead"
+
+    # Verify a telephone expense transaction can be recorded to this Common class
+    tx_payload = {
+        "date": "2026-03-01",
+        "amount": 245.50,
+        "account_name": "Telephone Expense",
+        "category_type": "OPERATING_EXPENSE",
+        "description": "T-Mobile Portfolio Corporate Telephone Bill",
+        "payee": "T-Mobile",
+        "property_id": overhead_prop["id"],
+        "class_id": common_cls["id"]
+    }
+    tx_res = client.post("/api/transactions", json=tx_payload)
+    assert tx_res.status_code == 200
+    tx_data = tx_res.json()
+    assert tx_data["amount"] == 245.50
+    assert tx_data["property_id"] == overhead_prop["id"]
+    assert tx_data["class_id"] == common_cls["id"]
+
+
+def test_create_common_class_standalone_api():
+    """Test creating a common overhead class directly via POST /api/classes with auto-generated overhead property."""
+    comp_res = client.get("/api/companies")
+    assert comp_res.status_code == 200
+    companies = comp_res.json()
+    assert len(companies) > 0
+    test_comp_id = companies[0]["id"]
+
+    class_payload = {
+        "name": "General Portfolio Overhead Expenses",
+        "company_id": test_comp_id,
+        "description": "Portfolio-wide legal, accounting, and telephone bills",
+        "entity_type": "COMMON",
+        "tax_classification": "PORTFOLIO_OVERHEAD",
+        "create_default_property": True,
+        "default_property_name": "General Portfolio Overhead"
+    }
+
+    res = client.post("/api/classes", json=class_payload)
+    assert res.status_code == 200
+    c_data = res.json()
+    assert c_data["name"] == "General Portfolio Overhead Expenses"
+    assert c_data["entity_type"] == "COMMON"
+    assert c_data["tax_classification"] == "PORTFOLIO_OVERHEAD"
+
+    # Verify sub-class property was automatically created
+    props_res = client.get(f"/api/properties?class_id={c_data['id']}")
+    assert props_res.status_code == 200
+    props = props_res.json()
+    matching_prop = next((p for p in props if p["name"] == "General Portfolio Overhead"), None)
+    assert matching_prop is not None
+    assert matching_prop["property_type"] == "Common Overhead"
+
+
+
 
 

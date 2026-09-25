@@ -54,11 +54,16 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
   const [selectedExistingCompId, setSelectedExistingCompId] = useState<number | ''>('');
   const [coaMode, setCoaMode] = useState<'DEFAULT' | 'CUSTOM'>('DEFAULT');
 
+  // Common Portfolio / Company Expense Class (Common to all)
+  const [includeCommonClass, setIncludeCommonClass] = useState<boolean>(true);
+  const [commonClassName, setCommonClassName] = useState<string>('Portfolio / Company Expense');
+  const [commonPropertyName, setCommonPropertyName] = useState<string>('Portfolio / Company Overhead');
+
   // Multi-Entity Staging State
   const [stagedEntities, setStagedEntities] = useState<EntityItemPayload[]>([]);
 
   // STEP 2: Business Type
-  const [entityType, setEntityType] = useState<'CORP' | 'LLC' | 'SELF_EMPLOYED'>('LLC');
+  const [entityType, setEntityType] = useState<'CORP' | 'LLC' | 'SELF_EMPLOYED' | 'COMMON'>('LLC');
 
   // STEP 3: Detailed Fields
   // Corp specific
@@ -125,7 +130,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
   if (!isOpen) return null;
 
   // Auto-populate default Tax Form when legal structure changes
-  const handleEntityTypeChange = (type: 'CORP' | 'LLC' | 'SELF_EMPLOYED') => {
+  const handleEntityTypeChange = (type: 'CORP' | 'LLC' | 'SELF_EMPLOYED' | 'COMMON') => {
     setEntityType(type);
     if (type === 'CORP') {
       setTaxForm(corpType === 'S_CORP' ? 'Form 1120-S' : 'Form 1120');
@@ -137,6 +142,12 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
       }
     } else if (type === 'SELF_EMPLOYED') {
       setTaxForm('Schedule C');
+    } else if (type === 'COMMON') {
+      setEntityName('Portfolio / Company Expense');
+      setTradeNameDba('Common Portfolio Overhead');
+      setTaxForm('N/A (Common Overhead)');
+      setContactName('Portfolio Admin');
+      setContactPhone('(555) 000-0000');
     }
   };
 
@@ -164,6 +175,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
       } else {
         setTaxForm(multiMemberTaxElection === 'FORM_1065' ? 'Form 1065 (Partnership)' : 'Form 1120-S (S-Corp Election)');
       }
+    } else if (entityType === 'COMMON') {
+      setTaxForm('N/A (Common Overhead)');
     } else {
       setTaxForm('Schedule C (Sole Proprietor)');
     }
@@ -177,25 +190,49 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
           ? 'Please enter the Business or Owner Legal Name.'
           : entityType === 'CORP'
           ? 'Please enter the Corporate Legal Name.'
+          : entityType === 'COMMON'
+          ? 'Please enter the Common Class Name.'
           : 'Please enter the LLC Legal Name.'
       );
       return;
     }
 
     if (!contactName.trim()) {
-      setErrorMsg(
-        entityType === 'CORP'
-          ? 'Please enter the Contact Person (Officer / Controller).'
-          : entityType === 'LLC'
-          ? 'Please enter the Managing Member or Primary Contact.'
-          : 'Please enter the Business Owner Name.'
-      );
-      return;
+      if (entityType === 'COMMON') {
+        setContactName('Portfolio Admin');
+      } else {
+        setErrorMsg(
+          entityType === 'CORP'
+            ? 'Please enter the Contact Person (Officer / Controller).'
+            : entityType === 'LLC'
+            ? 'Please enter the Managing Member or Primary Contact.'
+            : 'Please enter the Business Owner Name.'
+        );
+        return;
+      }
     }
 
     if (!contactPhone.trim()) {
-      setErrorMsg('Please provide a Contact Phone Number.');
-      return;
+      if (entityType === 'COMMON') {
+        setContactPhone('(555) 000-0000');
+      } else {
+        setErrorMsg('Please provide a Contact Phone Number.');
+        return;
+      }
+    }
+
+    // For COMMON class, automatically prepare default overhead sub-class property if list is empty
+    if (entityType === 'COMMON' && propertiesList.length === 0) {
+      setPropertiesList([{
+        name: commonPropertyName.trim() || 'Portfolio / Company Overhead',
+        address_line1: 'Portfolio-Wide Overhead',
+        city: 'Corporate',
+        state: 'CO',
+        zip_code: '00000',
+        property_type: 'Common Overhead',
+        units_count: 0
+      }]);
+      setIsAddingProperty(false);
     }
 
     setErrorMsg(null);
@@ -347,6 +384,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
       taxClassification = llcStructure === 'SINGLE_MEMBER' ? 'SINGLE_MEMBER_DISREGARDED' : 'MULTI_MEMBER';
     } else if (entityType === 'SELF_EMPLOYED') {
       taxClassification = 'SOLE_PROPRIETOR';
+    } else if (entityType === 'COMMON') {
+      taxClassification = 'PORTFOLIO_OVERHEAD';
     }
 
     const newEnt: EntityItemPayload = {
@@ -410,6 +449,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
           taxClassification = llcStructure === 'SINGLE_MEMBER' ? 'SINGLE_MEMBER_DISREGARDED' : 'MULTI_MEMBER';
         } else if (entityType === 'SELF_EMPLOYED') {
           taxClassification = 'SOLE_PROPRIETOR';
+        } else if (entityType === 'COMMON') {
+          taxClassification = 'PORTFOLIO_OVERHEAD';
         }
 
         finalEntities.push({
@@ -445,6 +486,9 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
         portfolio_notes: portfolioNotes.trim() || undefined,
         company_id: isCreatingNewCompany ? undefined : (selectedExistingCompId ? Number(selectedExistingCompId) : undefined),
         create_new_company_file: Boolean(isCreatingNewCompany),
+        include_common_class: includeCommonClass,
+        common_class_name: includeCommonClass ? (commonClassName.trim() || 'Portfolio / Company Expense') : undefined,
+        common_property_name: includeCommonClass ? (commonPropertyName.trim() || 'Portfolio / Company Overhead') : undefined,
         coa_mode: coaMode,
         entities: finalEntities,
 
@@ -748,6 +792,81 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Common Portfolio / Company Expense Class (Common to all) */}
+              <div className="p-5 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl mt-0.5">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-sm font-black text-slate-900">
+                          Shared Portfolio / Company Expense Class
+                        </h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          Common to All
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Create a dedicated shared class for expenses that cannot be classified to any single LLC or property (e.g., <strong>telephone bills</strong>, corporate legal/tax fees, accounting software subscriptions, portfolio-wide insurance).
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      checked={includeCommonClass}
+                      onChange={(e) => setIncludeCommonClass(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+
+                {includeCommonClass && (
+                  <div className="p-4 bg-white rounded-xl border border-indigo-100 space-y-3 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-800 flex items-center justify-between">
+                          <span>Common Class Name: *</span>
+                          <span className="text-[10px] text-indigo-600 font-medium">Shared Parent Class</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={commonClassName}
+                          onChange={(e) => setCommonClassName(e.target.value)}
+                          placeholder="e.g. Portfolio / Company Expense"
+                          className="w-full bg-slate-50 text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-800 flex items-center justify-between">
+                          <span>Sub-Class / Overhead Property: *</span>
+                          <span className="text-[10px] text-indigo-600 font-medium">Attached Sub-Class</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={commonPropertyName}
+                          onChange={(e) => setCommonPropertyName(e.target.value)}
+                          placeholder="e.g. Portfolio / Company Overhead"
+                          className="w-full bg-slate-50 text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-[11px] text-indigo-700 bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-100">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>
+                        In Check Register and Bank Import, transactions like telephone bills can be directly classified to <strong>"{commonClassName}"</strong> without associating with any individual LLC.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -783,8 +902,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                 </p>
               </div>
 
-              {/* Entity Type Cards: Corporation vs LLC vs Self-Employed */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Entity Type Cards: Corporation vs LLC vs Self-Employed vs Common Class */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. CORPORATION */}
                 <div
                   onClick={() => handleEntityTypeChange('CORP')}
@@ -878,6 +997,38 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                   </div>
                   <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 w-fit">
                     Individual / Sole Prop
+                  </span>
+                </div>
+
+                {/* 4. COMMON EXPENSE CLASS */}
+                <div
+                  onClick={() => handleEntityTypeChange('COMMON')}
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between space-y-3 ${
+                    entityType === 'COMMON'
+                      ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="p-2.5 bg-indigo-100 text-indigo-800 rounded-xl">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="radio"
+                      name="entity_type"
+                      checked={entityType === 'COMMON'}
+                      onChange={() => handleEntityTypeChange('COMMON')}
+                      className="text-indigo-600 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm">Common / Portfolio Class</h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Dedicated class common to all LLCs &amp; properties for shared overhead (e.g. telephone, software, legal).
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 w-fit">
+                    Common to All
                   </span>
                 </div>
               </div>
@@ -997,6 +1148,23 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                     Self-Employed real estate accounts report rental activities on IRS Schedule E or brokerage commissions / management on Schedule C.
                   </p>
                 )}
+
+                {entityType === 'COMMON' && (
+                  <div className="p-3 bg-white rounded-lg border border-indigo-200 text-xs space-y-2">
+                    <div className="flex items-center space-x-2 text-indigo-900 font-bold">
+                      <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Shared Portfolio / Company Expense Classification</span>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed">
+                      This class functions as the master shared overhead expense bucket for transactions that apply across the entire portfolio (e.g., <strong>telephone bills</strong>, central accounting fees, registered agent fees, website/software tools).
+                    </p>
+                    <div className="text-[11px] text-indigo-700 font-medium">
+                      &bull; Tax Form: <strong>N/A (Common Overhead / Rollup)</strong>
+                      <br />
+                      &bull; Default Sub-Class: <strong>{commonPropertyName || 'Portfolio / Company Overhead'}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1012,6 +1180,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                     ? 'Corporation Setup Details'
                     : entityType === 'LLC'
                     ? `${llcStructure === 'SINGLE_MEMBER' ? 'Single-Member (Disregarded)' : 'Multi-Member'} LLC Details`
+                    : entityType === 'COMMON'
+                    ? 'Common / Portfolio Expense Class Details'
                     : 'Self-Employed Entity Details'}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -1027,13 +1197,23 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                       ? 'Corporation Legal Name: *'
                       : entityType === 'LLC'
                       ? 'LLC Legal Name: *'
+                      : entityType === 'COMMON'
+                      ? 'Common Class Name: *'
                       : 'Owner / Business Legal Name: *'}
                   </label>
                   <input
                     type="text"
                     value={entityName}
                     onChange={(e) => setEntityName(e.target.value)}
-                    placeholder={entityType === 'CORP' ? 'e.g. Paramount Asset Management Corp' : entityType === 'LLC' ? 'e.g. 2908 Depot LLC' : 'e.g. Jane Doe Property Management'}
+                    placeholder={
+                      entityType === 'CORP' 
+                        ? 'e.g. Paramount Asset Management Corp' 
+                        : entityType === 'LLC' 
+                        ? 'e.g. 2908 Depot LLC' 
+                        : entityType === 'COMMON'
+                        ? 'e.g. Portfolio / Company Expense'
+                        : 'e.g. Jane Doe Property Management'
+                    }
                     className="w-full bg-white text-slate-900 placeholder:text-slate-400 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   />
                 </div>
@@ -1737,7 +1917,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                   allReviewEntities.push({
                     entity_name: entityName.trim(),
                     entity_type: entityType,
-                    tax_classification: entityType === 'CORP' ? corpType : (entityType === 'LLC' ? (llcStructure === 'SINGLE_MEMBER' ? 'SINGLE_MEMBER_DISREGARDED' : 'MULTI_MEMBER') : 'SOLE_PROPRIETOR'),
+                    tax_classification: entityType === 'CORP' ? corpType : (entityType === 'LLC' ? (llcStructure === 'SINGLE_MEMBER' ? 'SINGLE_MEMBER_DISREGARDED' : 'MULTI_MEMBER') : (entityType === 'COMMON' ? 'PORTFOLIO_OVERHEAD' : 'SOLE_PROPRIETOR')),
                     tax_form: taxForm.trim() || undefined,
                     ein: ein.trim() || undefined,
                     description: tradeNameDba ? `DBA: ${tradeNameDba}` : undefined,
@@ -1781,6 +1961,12 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                         <span className="text-emerald-400 font-bold">{totalLLCs} LLC{totalLLCs === 1 ? '' : 's'}</span>
                         <span className="text-indigo-400 font-normal">&gt;</span>
                         <span className="text-amber-300 font-bold">{totalHoldings} Sub-Class Holding{totalHoldings === 1 ? '' : 's'} under each LLC</span>
+                        {(includeCommonClass || allReviewEntities.some(e => e.entity_type === 'COMMON')) && (
+                          <>
+                            <span className="text-indigo-400 font-normal">+</span>
+                            <span className="text-indigo-300 font-bold">1 Common Expense Class (Common to all)</span>
+                          </>
+                        )}
                       </div>
 
                       {/* Interactive Visual Tree Hierarchy */}
@@ -1799,6 +1985,11 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                               <span className="text-[10px] text-emerald-400 font-normal bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/60">
                                 {ent.entity_type} {ent.tax_classification ? `(${ent.tax_classification})` : ''}
                               </span>
+                              {ent.entity_type === 'COMMON' && (
+                                <span className="text-[10px] text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/40 font-semibold">
+                                  Common to All
+                                </span>
+                              )}
                               {ent.ein && <span className="text-[10px] text-slate-400 font-normal">EIN: {ent.ein}</span>}
                             </div>
 
@@ -1822,6 +2013,30 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                             </div>
                           </div>
                         ))}
+
+                        {/* Dedicated Common Expense Class Visual Node (when configured in Step 1) */}
+                        {includeCommonClass && !allReviewEntities.some(e => e.entity_type === 'COMMON' || e.entity_name.toLowerCase() === commonClassName.trim().toLowerCase()) && (
+                          <div className="pl-5 space-y-2 border-l-2 border-indigo-800/60 ml-2">
+                            <div className="flex items-center space-x-2 text-indigo-300 font-bold">
+                              <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <span>Class: {commonClassName.trim() || 'Portfolio / Company Expense'}</span>
+                              <span className="text-[10px] text-indigo-300 font-normal bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-800/60">
+                                COMMON (PORTFOLIO_OVERHEAD)
+                              </span>
+                              <span className="text-[10px] text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/40 font-semibold">
+                                Common to All (Shared Overhead)
+                              </span>
+                            </div>
+
+                            <div className="pl-5 space-y-1 border-l-2 border-indigo-800/60 ml-1.5">
+                              <div className="text-amber-200 text-[11px] flex items-center space-x-2">
+                                <Home className="w-3 h-3 text-amber-400 shrink-0" />
+                                <span className="font-bold">{commonPropertyName.trim() || 'Portfolio / Company Overhead'}</span>
+                                <span className="text-slate-400">(Shared Overhead Sub-Class)</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

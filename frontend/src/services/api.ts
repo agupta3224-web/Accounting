@@ -215,7 +215,15 @@ export const api = {
     return res.json();
   },
 
-  async createClass(data: { name: string; company_id?: number | null; description?: string }): Promise<ClassEntity> {
+  async createClass(data: { 
+    name: string; 
+    company_id?: number | null; 
+    description?: string;
+    entity_type?: string;
+    tax_classification?: string;
+    create_default_property?: boolean;
+    default_property_name?: string;
+  }): Promise<ClassEntity> {
     const res = await fetch(`${API_BASE}/classes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
