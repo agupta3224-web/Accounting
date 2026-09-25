@@ -92,30 +92,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isExpired = licenseStatus?.status === 'EXPIRED';
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-md">
-      <div className="w-full px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
+    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-lg">
+      <div className="w-full px-3 sm:px-5 lg:px-6">
+        <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
           
           {/* Brand & Active Company */}
           <div className="flex items-center space-x-3 shrink-0">
             <div 
-              className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-950/40 cursor-pointer"
+              className="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-950/40 border border-emerald-400/30 cursor-pointer active:scale-95 transition-all"
               onClick={() => handleNavClick('dashboard', 'Financial P&L')}
             >
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-base tracking-tight text-white">PropBooks</span>
+                <span className="font-extrabold text-base tracking-tight text-white">PropBooks</span>
                 
                 {/* Company Dropdown Badge */}
                 <div className="relative">
                   <button
                     onClick={() => setShowCompanyMenu(!showCompanyMenu)}
-                    className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-emerald-300 hover:text-white hover:bg-slate-700/80 border border-slate-700 flex items-center space-x-1.5 transition cursor-pointer"
+                    className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-750 text-emerald-300 hover:text-white hover:border-emerald-500/50 border border-slate-700/80 shadow-sm flex items-center space-x-1.5 transition cursor-pointer"
                     title="Company & Entity Menu"
                   >
-                    <Landmark className="w-3 h-3 text-emerald-400" />
+                    <Landmark className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="truncate max-w-36">{activeCompanyName}</span>
                     <ChevronDown className="w-3 h-3 text-slate-400" />
                   </button>
@@ -206,116 +206,118 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="hidden xl:flex items-center space-x-1 bg-slate-800/70 p-1 rounded-xl border border-slate-700/60 overflow-x-auto max-w-2xl">
-            <button
-              onClick={() => setShowCompanyMenu(!showCompanyMenu)}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                showCompanyMenu
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-indigo-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-              title="Company & Entity Management"
-            >
-              <Landmark className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Company ▾</span>
-            </button>
+          {/* Navigation Bar - Dynamically scales and fills the available width */}
+          <nav className="hidden lg:flex flex-1 items-center justify-center min-w-0 mx-1 xl:mx-3">
+            <div className="flex items-center space-x-1.5 xl:space-x-2 bg-slate-950/85 p-1.5 rounded-2xl border border-slate-750/80 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar max-w-full">
+              <button
+                onClick={() => setShowCompanyMenu(!showCompanyMenu)}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  showCompanyMenu
+                    ? 'bg-gradient-to-b from-indigo-500 to-indigo-600 text-white font-extrabold border border-indigo-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(99,102,241,0.4)] ring-2 ring-indigo-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+                title="Company & Entity Management"
+              >
+                <Landmark className="w-4 h-4 text-indigo-400" />
+                <span>Company ▾</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('dashboard', 'Financial P&L')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'dashboard'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Financial P&L</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('dashboard', 'Financial P&L')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'dashboard'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <BarChart3 className={`w-4 h-4 ${activeTab === 'dashboard' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>Financial P&L</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('accounts', 'Chart of Accounts')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'accounts'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>COA</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('accounts', 'Chart of Accounts')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'accounts'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <BookOpen className={`w-4 h-4 ${activeTab === 'accounts' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>COA</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('journal', 'General Journal Entries')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'journal'
-                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-900/30'
-                  : 'text-cyan-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Scale className="w-3.5 h-3.5" />
-              <span>Journal</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('journal', 'General Journal Entries')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'journal'
+                    ? 'bg-gradient-to-b from-cyan-500 to-cyan-600 text-white font-extrabold border border-cyan-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(6,182,212,0.4)] ring-2 ring-cyan-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <Scale className={`w-4 h-4 ${activeTab === 'journal' ? 'text-white' : 'text-cyan-400'}`} />
+                <span>Journal</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('checks', 'Check Register')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'checks'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-emerald-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <CheckSquare className="w-3.5 h-3.5" />
-              <span>Checks</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('checks', 'Check Register')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'checks'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-emerald-300 hover:text-white border border-emerald-500/40 hover:border-emerald-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <CheckSquare className={`w-4 h-4 ${activeTab === 'checks' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>Checks</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('vendors', 'Vendor Center')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'vendors'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-900/30'
-                  : 'text-amber-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Vendors</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('vendors', 'Vendor Center')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'vendors'
+                    ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-white font-extrabold border border-amber-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(245,158,11,0.4)] ring-2 ring-amber-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-amber-300 hover:text-white border border-amber-500/40 hover:border-amber-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <Users className={`w-4 h-4 ${activeTab === 'vendors' ? 'text-white' : 'text-amber-400'}`} />
+                <span>Vendors</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('import', 'Import Statements')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'import'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Import</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('import', 'Import Statements')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'import'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <FileSpreadsheet className={`w-4 h-4 ${activeTab === 'import' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>Import</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('transactions', 'Transactions Register')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'transactions'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <ListFilter className="w-3.5 h-3.5" />
-              <span>Transactions</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('transactions', 'Transactions Register')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'transactions'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <ListFilter className={`w-4 h-4 ${activeTab === 'transactions' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>Transactions</span>
+              </button>
 
-            <button
-              onClick={() => handleNavClick('properties', 'Entities & Properties')}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'properties'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Properties</span>
-            </button>
+              <button
+                onClick={() => handleNavClick('properties', 'Entities & Properties')}
+                className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
+                  activeTab === 'properties'
+                    ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-b from-slate-800 to-slate-850 hover:from-slate-700 hover:to-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_4px_rgba(0,0,0,0.3)]'
+                }`}
+              >
+                <Layers className={`w-4 h-4 ${activeTab === 'properties' ? 'text-white' : 'text-emerald-400'}`} />
+                <span>Properties</span>
+              </button>
+            </div>
           </nav>
 
           {/* Quick Actions & Workspace Mode Toggle */}
@@ -324,34 +326,34 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Multi-Window Workspace Mode Toggle */}
             <button
               onClick={() => setIsMultiWindowMode(!isMultiWindowMode)}
-              className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 ${
                 isMultiWindowMode
-                  ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500/60 shadow-sm'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white hover:bg-slate-700'
+                  ? 'bg-gradient-to-b from-emerald-900/60 to-emerald-950/90 text-emerald-300 border-emerald-500/60 hover:border-emerald-400'
+                  : 'bg-gradient-to-b from-slate-800 to-slate-850 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
               }`}
               title={isMultiWindowMode ? 'Multi-Window Mode Active (Click to switch to Tabbed Mode)' : 'Switch to Multi-Window Desktop Workspace'}
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isMultiWindowMode ? 'Multi-Window' : 'Single View'}</span>
+              <LayoutGrid className="w-4 h-4 text-emerald-400" />
+              <span className="hidden xl:inline">{isMultiWindowMode ? 'Multi-Window' : 'Single View'}</span>
             </button>
 
             {/* Quick Action: Write Check */}
             <button
               onClick={onOpenWriteCheckModal}
-              className="hidden lg:flex items-center space-x-1 px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border border-emerald-400/80 rounded-xl text-xs font-bold transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_6px_rgba(16,185,129,0.3)] active:translate-y-0.5 cursor-pointer"
               title="Write Check (QuickBooks Desktop Format)"
             >
-              <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
+              <CheckSquare className="w-4 h-4 text-emerald-200" />
               <span>Write Check</span>
             </button>
 
             {/* Quick Action: Make Journal Entry */}
             <button
               onClick={onOpenMakeJournalModal}
-              className="hidden lg:flex items-center space-x-1 px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
+              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white border border-cyan-400/80 rounded-xl text-xs font-bold transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_6px_rgba(6,182,212,0.3)] active:translate-y-0.5 cursor-pointer"
               title="Make General Journal Entry by Date"
             >
-              <Scale className="w-3.5 h-3.5 text-cyan-400" />
+              <Scale className="w-4 h-4 text-cyan-200" />
               <span>Journal Entry</span>
             </button>
 
@@ -359,15 +361,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onOpenLicenseModal}
               title="Click to view license & subscription pricing"
-              className={`flex items-center space-x-1 px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl border transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 cursor-pointer ${
                 isExpired
-                  ? 'bg-rose-950 text-rose-300 border-rose-700 hover:bg-rose-900'
+                  ? 'bg-gradient-to-b from-rose-900 to-rose-950 text-rose-200 border-rose-600 hover:border-rose-400'
                   : isTrial
-                  ? 'bg-amber-950/70 text-amber-300 border-amber-600/60 hover:bg-amber-900/70'
-                  : 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/70'
+                  ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 text-amber-300 border-amber-600/70 hover:border-amber-400'
+                  : 'bg-gradient-to-b from-emerald-950/80 to-slate-900 text-emerald-300 border-emerald-600/70 hover:border-emerald-400'
               }`}
             >
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Zap className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">{licenseStatus?.is_trial ? `Trial (${licenseStatus.days_remaining}d)` : (licenseStatus?.plan || 'Pro')}</span>
             </button>
 
@@ -375,9 +377,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onCloseCompany}
               title="Close company and auto-backup on exit"
-              className="flex items-center space-x-1 px-2 py-1.5 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 rounded-lg transition cursor-pointer"
+              className="h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold text-slate-300 hover:text-rose-200 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-rose-950 hover:to-rose-900 border border-slate-700 hover:border-rose-700/70 rounded-xl transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.25)] active:translate-y-0.5 cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <LogOut className="w-4 h-4 text-rose-400" />
               <span className="hidden sm:inline">Close</span>
             </button>
           </div>
@@ -392,20 +394,20 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       )}
 
-      {/* Mobile nav */}
-      <div className="xl:hidden flex overflow-x-auto px-4 py-2 space-x-2 border-t border-slate-800 bg-slate-900/90 text-xs">
-        <button onClick={() => setShowCompanyMenu(!showCompanyMenu)} className="px-2.5 py-1 rounded whitespace-nowrap bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-bold flex items-center space-x-1 cursor-pointer">
-          <Landmark className="w-3 h-3 text-indigo-400" />
+      {/* Mobile nav (< lg) */}
+      <div className="lg:hidden flex overflow-x-auto no-scrollbar px-3 py-2 space-x-2 border-t border-slate-800 bg-slate-900/95 text-xs">
+        <button onClick={() => setShowCompanyMenu(!showCompanyMenu)} className="h-9 px-3 rounded-lg whitespace-nowrap bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-bold flex items-center space-x-1.5 shadow-sm cursor-pointer active:scale-95">
+          <Landmark className="w-3.5 h-3.5 text-indigo-400" />
           <span>Company ▾</span>
         </button>
-        <button onClick={() => handleNavClick('dashboard', 'Financial P&L')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300'}`}>Financial P&L</button>
-        <button onClick={() => handleNavClick('accounts', 'Chart of Accounts')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'accounts' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300'}`}>COA</button>
-        <button onClick={() => handleNavClick('journal', 'General Journal Entries')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'journal' ? 'bg-cyan-600 text-white font-bold' : 'text-cyan-300'}`}>Journal</button>
-        <button onClick={() => handleNavClick('checks', 'Check Register')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'checks' ? 'bg-emerald-600 text-white font-bold' : 'text-emerald-300'}`}>Checks</button>
-        <button onClick={() => handleNavClick('vendors', 'Vendor Center')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'vendors' ? 'bg-amber-600 text-white font-bold' : 'text-amber-300'}`}>Vendors</button>
-        <button onClick={() => handleNavClick('import', 'Import Statements')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'import' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300'}`}>Import</button>
-        <button onClick={() => handleNavClick('transactions', 'Transactions Register')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'transactions' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300'}`}>Transactions</button>
-        <button onClick={() => handleNavClick('properties', 'Entities & Properties')} className={`px-2.5 py-1 rounded whitespace-nowrap ${activeTab === 'properties' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300'}`}>Properties</button>
+        <button onClick={() => handleNavClick('dashboard', 'Financial P&L')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Financial P&L</button>
+        <button onClick={() => handleNavClick('accounts', 'Chart of Accounts')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'accounts' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>COA</button>
+        <button onClick={() => handleNavClick('journal', 'General Journal Entries')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'journal' ? 'bg-cyan-600 text-white border-cyan-400' : 'bg-slate-800 text-cyan-300 border-slate-700'}`}>Journal</button>
+        <button onClick={() => handleNavClick('checks', 'Check Register')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'checks' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-emerald-300 border-slate-700'}`}>Checks</button>
+        <button onClick={() => handleNavClick('vendors', 'Vendor Center')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'vendors' ? 'bg-amber-600 text-white border-amber-400' : 'bg-slate-800 text-amber-300 border-slate-700'}`}>Vendors</button>
+        <button onClick={() => handleNavClick('import', 'Import Statements')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'import' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Import</button>
+        <button onClick={() => handleNavClick('transactions', 'Transactions Register')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'transactions' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Transactions</button>
+        <button onClick={() => handleNavClick('properties', 'Entities & Properties')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'properties' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Properties</button>
       </div>
     </header>
   );

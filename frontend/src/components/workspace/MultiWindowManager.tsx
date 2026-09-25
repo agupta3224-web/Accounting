@@ -400,7 +400,7 @@ export const MultiWindowManager: React.FC<MultiWindowManagerProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-4rem)] flex flex-col bg-slate-950 overflow-hidden select-none">
+    <div className="relative w-full flex-1 min-h-0 h-[calc(100vh-5rem)] flex flex-col bg-slate-950 overflow-hidden select-none">
       
       {/* Top Multi-Window Desktop Toolbar */}
       <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-30 shrink-0">
