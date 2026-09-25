@@ -139,37 +139,6 @@
   color: #64748b !important;
 }
 
-/* Explicitly preserve high-contrast white text on colorful buttons and badges */
-[data-theme="light"] [class*="bg-emerald-"] .text-white,
-[data-theme="light"] [class*="from-emerald-"] .text-white,
-[data-theme="light"] [class*="bg-indigo-"] .text-white,
-[data-theme="light"] [class*="from-indigo-"] .text-white,
-[data-theme="light"] [class*="bg-cyan-"] .text-white,
-[data-theme="light"] [class*="from-cyan-"] .text-white,
-[data-theme="light"] [class*="bg-rose-"] .text-white,
-[data-theme="light"] [class*="from-rose-"] .text-white,
-[data-theme="light"] [class*="bg-amber-"] .text-white,
-[data-theme="light"] [class*="from-amber-"] .text-white,
-[data-theme="light"] [class*="bg-blue-"] .text-white,
-[data-theme="light"] [class*="from-blue-"] .text-white,
-[data-theme="light"] button[class*="bg-emerald-"],
-[data-theme="light"] button[class*="bg-indigo-"],
-[data-theme="light"] button[class*="bg-cyan-"],
-[data-theme="light"] button[class*="bg-rose-"],
-[data-theme="light"] button[class*="from-emerald-"],
-[data-theme="light"] button[class*="from-indigo-"],
-[data-theme="light"] button[class*="from-cyan-"],
-[data-theme="light"] button[class*="from-rose-"],
-[data-theme="light"] [class*="from-emerald-"] span,
-[data-theme="light"] [class*="from-indigo-"] span,
-[data-theme="light"] [class*="from-cyan-"] span,
-[data-theme="light"] [class*="from-rose-"] span,
-[data-theme="light"] [class*="from-emerald-"] svg,
-[data-theme="light"] [class*="from-indigo-"] svg,
-[data-theme="light"] [class*="from-cyan-"] svg,
-[data-theme="light"] [class*="from-rose-"] svg {
-  color: #ffffff !important;
-}
 
 /* Light theme inputs */
 [data-theme="light"] input,

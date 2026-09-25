@@ -138,6 +138,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const getNavBtnClass = (isActive: boolean, activeGradient: string, inactiveLightExtra: string, inactiveDarkExtra: string) => {
     if (isActive) {
+      if (isLight) {
+        return `${navBtnBase} bg-white text-emerald-950 font-black border-2 border-emerald-600 shadow-md ring-2 ring-emerald-500/20`;
+      }
       return `${navBtnBase} ${activeGradient}`;
     }
     if (isLight) {
@@ -483,75 +486,87 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Multi-Window Workspace Mode Toggle */}
             <button
               onClick={() => setIsMultiWindowMode(!isMultiWindowMode)}
-              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs active:translate-y-0.5 ${
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs active:translate-y-0.5 ${
                 isLight
                   ? isMultiWindowMode
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-400 font-bold'
-                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                    ? 'bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-600 shadow-sm'
+                    : 'bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 shadow-2xs'
                   : isMultiWindowMode
-                  ? 'bg-gradient-to-b from-emerald-900/60 to-emerald-950/90 text-emerald-300 border-emerald-500/60 hover:border-emerald-400'
-                  : 'bg-gradient-to-b from-slate-800 to-slate-850 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
+                  ? 'bg-gradient-to-b from-emerald-900/60 to-emerald-950/90 text-emerald-300 border border-emerald-500/60 hover:border-emerald-400 font-bold'
+                  : 'bg-gradient-to-b from-slate-800 to-slate-850 text-slate-300 border border-slate-700 hover:border-slate-500 hover:text-white font-bold'
               }`}
               title={isMultiWindowMode ? 'Multi-Window Mode Active (Click to switch to Tabbed Mode)' : 'Switch to Multi-Window Desktop Workspace'}
             >
-              <LayoutGrid className="w-4 h-4 text-emerald-500" />
-              <span className="hidden xl:inline">{isMultiWindowMode ? 'Multi-Window' : 'Single View'}</span>
+              <LayoutGrid className={`w-4 h-4 ${isLight ? (isMultiWindowMode ? 'text-emerald-700' : 'text-slate-600') : 'text-emerald-500'}`} />
+              <span className={`hidden xl:inline ${isLight ? (isMultiWindowMode ? 'text-emerald-950 font-black' : 'text-slate-800 font-bold') : ''}`}>
+                {isMultiWindowMode ? 'Multi-Window' : 'Single View'}
+              </span>
             </button>
 
             {/* Quick Action: Write Check */}
             <button
               onClick={onOpenWriteCheckModal}
-              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border border-emerald-400/80 rounded-xl text-xs font-bold transition-all shadow-sm active:translate-y-0.5 cursor-pointer"
+              className={`h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 rounded-xl text-xs font-black transition-all shadow-xs active:translate-y-0.5 cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-600'
+                  : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border border-emerald-400/80 font-bold shadow-sm'
+              }`}
               title="Write Check (QuickBooks Desktop Format)"
             >
-              <CheckSquare className="w-4 h-4 text-emerald-100" />
-              <span>Write Check</span>
+              <CheckSquare className={`w-4 h-4 ${isLight ? 'text-emerald-700' : 'text-emerald-100'}`} />
+              <span className={isLight ? 'text-emerald-950 font-black' : ''}>Write Check</span>
             </button>
 
             {/* Quick Action: Make Journal Entry */}
             <button
               onClick={onOpenMakeJournalModal}
-              className="h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white border border-cyan-400/80 rounded-xl text-xs font-bold transition-all shadow-sm active:translate-y-0.5 cursor-pointer"
+              className={`h-11 xl:h-12 hidden lg:flex items-center space-x-1.5 px-3.5 rounded-xl text-xs font-black transition-all shadow-xs active:translate-y-0.5 cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-cyan-50 text-cyan-950 border-2 border-cyan-600'
+                  : 'bg-gradient-to-b from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white border border-cyan-400/80 font-bold shadow-sm'
+              }`}
               title="Make General Journal Entry by Date"
             >
-              <Scale className="w-4 h-4 text-cyan-100" />
-              <span>Journal Entry</span>
+              <Scale className={`w-4 h-4 ${isLight ? 'text-cyan-700' : 'text-cyan-100'}`} />
+              <span className={isLight ? 'text-cyan-950 font-black' : ''}>Journal Entry</span>
             </button>
 
             {/* License Status Pill */}
             <button
               onClick={onOpenLicenseModal}
               title="Click to view license & subscription pricing"
-              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl border transition-all shadow-2xs active:translate-y-0.5 cursor-pointer ${
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-black rounded-xl transition-all shadow-xs active:translate-y-0.5 cursor-pointer ${
                 isLight
                   ? isExpired
-                    ? 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200'
+                    ? 'bg-white hover:bg-rose-50 text-rose-950 border-2 border-rose-500'
                     : isTrial
-                    ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
-                    : 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200'
+                    ? 'bg-white hover:bg-amber-50 text-amber-950 border-2 border-amber-500'
+                    : 'bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-600'
                   : isExpired
-                  ? 'bg-gradient-to-b from-rose-900 to-rose-950 text-rose-200 border-rose-600 hover:border-rose-400'
+                  ? 'bg-gradient-to-b from-rose-900 to-rose-950 text-rose-200 border border-rose-600 hover:border-rose-400 font-bold'
                   : isTrial
-                  ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 text-amber-300 border-amber-600/70 hover:border-amber-400'
-                  : 'bg-gradient-to-b from-emerald-950/80 to-slate-900 text-emerald-300 border-emerald-600/70 hover:border-emerald-400'
+                  ? 'bg-gradient-to-b from-amber-950/80 to-slate-900 text-amber-300 border border-amber-600/70 hover:border-amber-400 font-bold'
+                  : 'bg-gradient-to-b from-emerald-950/80 to-slate-900 text-emerald-300 border border-emerald-600/70 hover:border-emerald-400 font-bold'
               }`}
             >
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">{licenseStatus?.is_trial ? `Trial (${licenseStatus.days_remaining}d)` : (licenseStatus?.plan || 'Pro')}</span>
+              <Zap className={`w-4 h-4 ${isLight ? 'text-amber-500 fill-amber-500' : 'text-amber-400'}`} />
+              <span className={`hidden sm:inline ${isLight ? 'text-emerald-950 font-black' : ''}`}>
+                {licenseStatus?.is_trial ? `Trial (${licenseStatus.days_remaining}d)` : (licenseStatus?.plan || 'Pro')}
+              </span>
             </button>
 
             {/* Close Company (Auto-Backup on close) */}
             <button
               onClick={onCloseCompany}
               title="Close company and auto-backup on exit"
-              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-bold rounded-xl transition-all shadow-2xs active:translate-y-0.5 cursor-pointer border ${
+              className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 text-xs font-black rounded-xl transition-all shadow-xs active:translate-y-0.5 cursor-pointer ${
                 isLight
-                  ? 'text-slate-700 hover:text-rose-700 bg-white hover:bg-rose-50 border-slate-300 hover:border-rose-300'
-                  : 'text-slate-300 hover:text-rose-200 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-rose-950 hover:to-rose-900 border-slate-700 hover:border-rose-700/70'
+                  ? 'text-rose-800 hover:text-rose-950 bg-white hover:bg-rose-50 border-2 border-rose-400'
+                  : 'text-slate-300 hover:text-rose-200 bg-gradient-to-b from-slate-800 to-slate-850 hover:from-rose-950 hover:to-rose-900 border border-slate-700 hover:border-rose-700/70 font-bold'
               }`}
             >
-              <LogOut className="w-4 h-4 text-rose-500" />
-              <span className="hidden sm:inline">Close</span>
+              <LogOut className={`w-4 h-4 ${isLight ? 'text-rose-600' : 'text-rose-500'}`} />
+              <span className={`hidden sm:inline ${isLight ? 'text-rose-800 font-black' : ''}`}>Close</span>
             </button>
           </div>
         </div>

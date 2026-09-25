@@ -206,38 +206,54 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
           <button
             type="button"
             onClick={() => setIsEntityWizardOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer"
+            className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
+              isLight
+                ? 'bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-600 shadow-xs'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+            }`}
             title="Launch Guided Entity & Portfolio Setup Interview Wizard"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <Sparkles className={`w-3.5 h-3.5 ${isLight ? 'text-amber-500 fill-amber-500' : 'text-amber-300'}`} />
             <span>+ Guided Entity Setup Interview</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsEntityWizardOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
+              isLight
+                ? 'bg-white hover:bg-slate-100 text-slate-950 border-2 border-slate-700 shadow-xs'
+                : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs'
+            }`}
             title="Launch Entity Setup Interview"
           >
-            <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+            <Landmark className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`} />
             <span>&lt;Create New Company&gt;</span>
           </button>
 
           <button
             type="button"
             onClick={() => { setActiveForm('CLASS'); setFormError(null); setFormSuccess(null); if (companies[0]) setSelectedCompId(companies[0].id); }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
+              isLight
+                ? 'bg-white hover:bg-indigo-50 text-indigo-950 border-2 border-indigo-700 shadow-xs'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+            }`}
           >
-            <Shield className="w-3.5 h-3.5 text-indigo-200" />
+            <Shield className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-700' : 'text-indigo-200'}`} />
             <span>&lt;Create a New Class&gt; (LLC)</span>
           </button>
 
           <button
             type="button"
             onClick={() => { setActiveForm('SUBCLASS'); setFormError(null); setFormSuccess(null); if (classes[0]) setSelectedClassId(classes[0].id); }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
+              isLight
+                ? 'bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-600 shadow-xs'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+            }`}
           >
-            <Home className="w-3.5 h-3.5 text-emerald-200" />
+            <Home className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-700' : 'text-emerald-200'}`} />
             <span>&lt;Create new Sub Class&gt; (Property)</span>
           </button>
         </div>
@@ -245,35 +261,35 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
 
       {/* Class Structure Architecture Display Banner */}
       {isLight ? (
-        <div className="bg-gradient-to-r from-purple-50 via-indigo-50/80 to-purple-50 text-slate-900 p-4 rounded-xl shadow-xs border-2 border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white text-slate-950 p-4 rounded-xl shadow-xs border-2 border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs shrink-0">
-              <Layers className="w-5 h-5" />
+            <div className="p-2.5 bg-indigo-50 text-indigo-950 border-2 border-indigo-600 rounded-xl shadow-2xs shrink-0">
+              <Layers className="w-5 h-5 text-indigo-700" />
             </div>
             <div>
               <div className="text-xs font-black uppercase tracking-wider text-indigo-950">
                 Class Structure Architecture
               </div>
-              <div className="text-sm font-black text-slate-900 flex flex-wrap items-center gap-2 mt-0.5">
+              <div className="text-sm font-black text-slate-950 flex flex-wrap items-center gap-2 mt-0.5">
                 <span className="text-slate-950 font-black">{companies[0]?.name || 'Rental Portfolio'}</span>
-                <span className="text-indigo-500 font-black">&gt;</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-950 font-black text-xs border border-indigo-300 shadow-2xs">
+                <span className="text-indigo-700 font-black text-sm">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-indigo-950 font-black text-xs border-2 border-indigo-700 shadow-2xs">
                   {classes.length} LLC{classes.length === 1 ? '' : 's'}
                 </span>
-                <span className="text-indigo-500 font-black">&gt;</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
+                <span className="text-indigo-700 font-black text-sm">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-emerald-950 font-black text-xs border-2 border-emerald-700 shadow-2xs">
                   {properties.length} Sub-Class Holding{properties.length === 1 ? '' : 's'}
                 </span>
               </div>
             </div>
           </div>
-          <div className="bg-white border-2 border-indigo-200/90 px-3.5 py-2 rounded-xl shadow-2xs text-xs font-semibold text-slate-800 shrink-0 flex flex-wrap items-center gap-1.5">
-            <span className="font-black text-indigo-950 uppercase tracking-wide text-[11px] mr-1">Example:</span>
-            <span className="font-mono text-emerald-800 font-black">Rental Portfolio</span>
-            <span className="text-indigo-500 font-bold">&gt;</span>
-            <span className="font-mono text-indigo-900 font-black">2 LLCs</span>
-            <span className="text-indigo-500 font-bold">&gt;</span>
-            <span className="font-mono text-emerald-800 font-black">Holdings under each LLC</span>
+          <div className="bg-white border-2 border-indigo-700 px-4 py-2 rounded-xl shadow-2xs text-xs font-bold text-slate-900 shrink-0 flex flex-wrap items-center gap-1.5">
+            <span className="font-black text-indigo-950 uppercase tracking-wide text-[11px] mr-1.5">Example:</span>
+            <span className="font-mono text-emerald-950 font-black">Rental Portfolio</span>
+            <span className="text-indigo-700 font-black mx-1">&gt;</span>
+            <span className="font-mono text-indigo-950 font-black">2 LLCs</span>
+            <span className="text-indigo-700 font-black mx-1">&gt;</span>
+            <span className="font-mono text-emerald-950 font-black">Holdings under each LLC</span>
           </div>
         </div>
       ) : (
