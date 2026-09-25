@@ -307,7 +307,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               <button
-                onClick={() => handleNavClick('properties', 'Entities & Properties')}
+                onClick={() => handleNavClick('properties', 'Company/Property Structure')}
                 className={`h-11 xl:h-12 flex items-center space-x-1.5 px-3 xl:px-3.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 active:scale-[0.98] ${
                   activeTab === 'properties'
                     ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-extrabold border border-emerald-350 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/40'
@@ -315,7 +315,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Layers className={`w-4 h-4 ${activeTab === 'properties' ? 'text-white' : 'text-emerald-400'}`} />
-                <span>Properties</span>
+                <span>Company/Property Structure</span>
               </button>
             </div>
           </nav>
@@ -407,7 +407,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button onClick={() => handleNavClick('vendors', 'Vendor Center')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'vendors' ? 'bg-amber-600 text-white border-amber-400' : 'bg-slate-800 text-amber-300 border-slate-700'}`}>Vendors</button>
         <button onClick={() => handleNavClick('import', 'Import Statements')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'import' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Import</button>
         <button onClick={() => handleNavClick('transactions', 'Transactions Register')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'transactions' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Transactions</button>
-        <button onClick={() => handleNavClick('properties', 'Entities & Properties')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'properties' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Properties</button>
+        <button onClick={() => handleNavClick('properties', 'Company/Property Structure')} className={`h-9 px-3 rounded-lg whitespace-nowrap font-bold border transition shadow-sm cursor-pointer ${activeTab === 'properties' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}>Company/Property Structure</button>
       </div>
     </header>
   );
