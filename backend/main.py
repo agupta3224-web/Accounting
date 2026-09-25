@@ -900,8 +900,15 @@ def get_hierarchy(db: Session = Depends(get_db)):
 @app.get("/api/categories")
 def get_categories(db: Session = Depends(get_db)):
     backfill_standard_account_numbers(db)
-    cats = db.query(Category).order_by(Category.type, Category.name).all()
-    return [c.to_dict() for c in cats]
+    cats = db.query(Category).all()
+    sorted_cats = sorted(
+        cats,
+        key=lambda a: (
+            int(''.join(filter(str.isdigit, a.account_number))) if a.account_number and any(c.isdigit() for c in a.account_number) else 999999,
+            a.name
+        )
+    )
+    return [c.to_dict() for c in sorted_cats]
 
 @app.get("/api/accounts")
 def get_accounts(

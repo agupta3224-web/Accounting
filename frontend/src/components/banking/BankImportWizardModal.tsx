@@ -19,7 +19,8 @@ import {
   Sliders,
   Check,
   Search,
-  Filter
+  Filter,
+  CornerDownRight
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { 
@@ -143,6 +144,16 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
     return ordered;
   }, [allCategories]);
 
+  // Memoized numerical ordering of all categories (sorted by 5-digit account number ascending)
+  const numericalCategories = React.useMemo(() => {
+    return [...allCategories].sort((a, b) => {
+      const numA = parseInt(a.account_number?.replace(/\D/g, '') || '999999', 10);
+      const numB = parseInt(b.account_number?.replace(/\D/g, '') || '999999', 10);
+      if (numA !== numB) return numA - numB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [allCategories]);
+
   const [bankAccountId, setBankAccountId] = useState<number>(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -192,6 +203,8 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
   const [newAccountDesc, setNewAccountDesc] = useState('');
   const [newAccountSaveRule, setNewAccountSaveRule] = useState(true);
   const [newAccountRuleKeyword, setNewAccountRuleKeyword] = useState('');
+  const [newAccountIsSubAccount, setNewAccountIsSubAccount] = useState(false);
+  const [newAccountParentId, setNewAccountParentId] = useState<number | ''>('');
   const [isSavingNewAccount, setIsSavingNewAccount] = useState(false);
   const [addAccountError, setAddAccountError] = useState<string | null>(null);
 
@@ -661,6 +674,8 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
     let defaultType = 'OPERATING_EXPENSE';
     let defaultSubType = 'Utilities';
     let defaultNum = '';
+    let defaultIsSub = false;
+    let defaultParentId: number | '' = '';
 
     const effectivePayee = (showRowParserModal && parsedPayee)
       ? parsedPayee
@@ -674,6 +689,21 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
       defaultName = transactions[txnIndex].category_name!;
       defaultNum = transactions[txnIndex].category_account_number || '';
       defaultKeyword = effectivePayee;
+    } else if (lower.includes('capital one') || lower.includes('credit card') || lower.includes('chase card') || lower.includes('amex') || lower.includes('mastercard') || lower.includes('visa') || lower.includes('discover')) {
+      defaultName = (effectivePayee.toLowerCase().includes('card') || effectivePayee.toLowerCase().includes('capital one'))
+        ? (effectivePayee.trim() || 'Capital One')
+        : `${effectivePayee} Credit Card`;
+      defaultType = 'LIABILITY';
+      defaultSubType = 'Credit Card';
+      const creditCardParent = allCategories.find(c => 
+        c.account_number === '20300' || 
+        (c.type === 'LIABILITY' && c.name.toLowerCase().includes('credit card'))
+      );
+      if (creditCardParent) {
+        defaultIsSub = true;
+        defaultParentId = creditCardParent.id;
+      }
+      defaultKeyword = effectivePayee || 'Capital One';
     } else if (lower.includes('t-mobile') || lower.includes('tmobile') || lower.includes('verizon') || lower.includes('phone') || lower.includes('cellular')) {
       defaultName = 'Telephone Expense';
       defaultSubType = 'Utilities';
@@ -707,19 +737,22 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
     setNewAccountRuleKeyword(defaultKeyword);
     setNewAccountType(defaultType);
     setNewAccountSubType(defaultSubType);
+    setNewAccountIsSubAccount(defaultIsSub);
+    setNewAccountParentId(defaultParentId);
     setNewAccountDesc(defaultKeyword ? `Created during bank import for ${defaultKeyword}` : 'Created from bank import wizard');
     setNewAccountSaveRule(Boolean(defaultKeyword));
 
     if (!defaultNum) {
       try {
-        const sug = await api.getSuggestedAccountNumber(defaultType);
+        const targetParent = defaultIsSub && defaultParentId ? Number(defaultParentId) : null;
+        const sug = await api.getSuggestedAccountNumber(defaultType, targetParent);
         if (sug && (sug.suggested_number || (sug as any).suggested_account_number)) {
           setNewAccountNumber(sug.suggested_number || (sug as any).suggested_account_number);
         } else {
-          setNewAccountNumber('61400');
+          setNewAccountNumber(defaultIsSub ? (defaultType === 'LIABILITY' ? '20310' : '10110') : '61400');
         }
       } catch {
-        setNewAccountNumber('61400');
+        setNewAccountNumber(defaultIsSub ? (defaultType === 'LIABILITY' ? '20310' : '10110') : '61400');
       }
     } else {
       setNewAccountNumber(defaultNum);
@@ -737,6 +770,10 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
       setAddAccountError('Account Number is required');
       return;
     }
+    if (newAccountIsSubAccount && !newAccountParentId) {
+      setAddAccountError('Please select a Parent Account for this sub-account');
+      return;
+    }
 
     try {
       setIsSavingNewAccount(true);
@@ -747,6 +784,7 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
         type: newAccountType,
         sub_type: newAccountSubType || undefined,
         description: newAccountDesc || undefined,
+        parent_account_id: (newAccountIsSubAccount && newAccountParentId) ? Number(newAccountParentId) : undefined,
       });
 
       // Refresh categories list
@@ -1729,12 +1767,12 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                   <select
                     value={bulkCategory}
                     onChange={(e) => setBulkCategory(e.target.value ? Number(e.target.value) : '')}
-                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white max-w-[150px]"
+                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white max-w-[170px]"
                   >
-                    <option value="">Category...</option>
-                    {allCategories.map(c => (
+                    <option value="">Category (Numerical)...</option>
+                    {numericalCategories.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.account_number ? `[${c.account_number}] ` : ''}{c.name}
+                        {c.parent_account_id ? `\u00A0\u00A0↳ [${c.account_number}] ${c.name}` : `[${c.account_number}] ${c.name}`}
                       </option>
                     ))}
                   </select>
@@ -1875,10 +1913,10 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                                     }}
                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-medium focus:outline-none focus:border-emerald-500"
                                   >
-                                    <option value="">-- Choose Account --</option>
-                                    {allCategories.map(c => (
+                                    <option value="">-- Choose Account (Numerical) --</option>
+                                    {numericalCategories.map(c => (
                                       <option key={c.id} value={c.id}>
-                                        {c.account_number ? `[${c.account_number}] ` : ''}{c.name}
+                                        {c.parent_account_id ? `\u00A0\u00A0↳ [${c.account_number}] ${c.name}` : `[${c.account_number}] ${c.name}`}
                                       </option>
                                     ))}
                                   </select>
@@ -2363,10 +2401,12 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                       }}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
                     >
-                      <option value="">-- Select Register Category --</option>
-                      {allCategories.map(c => (
+                      <option value="">-- Select Register Category (Numerical Order) --</option>
+                      {numericalCategories.map(c => (
                         <option key={c.id} value={c.id}>
-                          [{c.account_number}] {c.name} ({c.type})
+                          {c.parent_account_id 
+                            ? `\u00A0\u00A0\u00A0\u00A0↳ [${c.account_number}] ${c.name}` 
+                            : `[${c.account_number}] ${c.name}`} ({c.type})
                         </option>
                       ))}
                     </select>
@@ -2530,14 +2570,119 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                   </div>
                 </div>
 
+                {/* Sub-Account Selector Card */}
+                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+                  <label className="flex items-center space-x-2 text-xs font-semibold text-slate-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newAccountIsSubAccount}
+                      onChange={async (e) => {
+                        const checked = e.target.checked;
+                        setNewAccountIsSubAccount(checked);
+                        if (!checked) {
+                          setNewAccountParentId('');
+                          try {
+                            const sug = await api.getSuggestedAccountNumber(newAccountType);
+                            if (sug && (sug.suggested_number || (sug as any).suggested_account_number)) {
+                              setNewAccountNumber(sug.suggested_number || (sug as any).suggested_account_number);
+                            }
+                          } catch {}
+                        } else {
+                          // Find default parent: Credit Cards Payable (20300) for LIABILITY, Operating Checking (10100) for ASSET, etc.
+                          const candidate = numericalCategories.find(c =>
+                            !c.parent_account_id && (
+                              (newAccountType === 'LIABILITY' && (c.account_number === '20300' || c.name.toLowerCase().includes('credit card'))) ||
+                              c.type === newAccountType
+                            )
+                          ) || numericalCategories.find(c => !c.parent_account_id) || numericalCategories[0];
+
+                          if (candidate) {
+                            setNewAccountParentId(candidate.id);
+                            setNewAccountType(candidate.type);
+                            if (candidate.sub_type) {
+                              setNewAccountSubType(candidate.sub_type);
+                            } else if (candidate.type === 'LIABILITY') {
+                              setNewAccountSubType('Credit Card');
+                            }
+                            try {
+                              const sug = await api.getSuggestedAccountNumber(candidate.type, candidate.id);
+                              if (sug && (sug.suggested_number || (sug as any).suggested_account_number)) {
+                                setNewAccountNumber(sug.suggested_number || (sug as any).suggested_account_number);
+                              }
+                            } catch {}
+                          }
+                        }
+                      }}
+                      className="rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <div className="flex items-center space-x-1.5">
+                      <CornerDownRight className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Make this a sub-account of an existing category</span>
+                    </div>
+                  </label>
+
+                  {newAccountIsSubAccount && (
+                    <div className="pl-6 space-y-1.5 pt-1">
+                      <label className="block text-[11px] font-semibold text-slate-300">
+                        Parent Account <span className="text-rose-400">*</span>
+                      </label>
+                      <select
+                        value={newAccountParentId}
+                        onChange={async (e) => {
+                          const pId = e.target.value ? Number(e.target.value) : '';
+                          setNewAccountParentId(pId);
+                          if (pId) {
+                            const parent = allCategories.find(c => c.id === pId);
+                            if (parent) {
+                              setNewAccountType(parent.type);
+                              if (parent.sub_type) {
+                                setNewAccountSubType(parent.sub_type);
+                              } else if (parent.type === 'LIABILITY') {
+                                setNewAccountSubType('Credit Card');
+                              }
+                              try {
+                                const sug = await api.getSuggestedAccountNumber(parent.type, parent.id);
+                                if (sug && (sug.suggested_number || (sug as any).suggested_account_number)) {
+                                  setNewAccountNumber(sug.suggested_number || (sug as any).suggested_account_number);
+                                }
+                              } catch {}
+                            }
+                          }
+                        }}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                      >
+                        <option value="">-- Select Parent Account (Numerical Order) --</option>
+                        {numericalCategories
+                          .filter(c => !c.parent_account_id)
+                          .map(c => (
+                            <option key={c.id} value={c.id}>
+                              [{c.account_number}] {c.name} ({c.type})
+                            </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-slate-400">
+                        e.g. Choose <strong>[20300] Credit Cards Payable</strong> to make Capital One a sub-account of Credit Cards.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Account Type</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Account Type {newAccountIsSubAccount && <span className="text-emerald-400 text-[10px]">(Inherited)</span>}
+                    </label>
                     <select
                       value={newAccountType}
+                      disabled={newAccountIsSubAccount}
                       onChange={async (e) => {
                         const val = e.target.value;
                         setNewAccountType(val);
+                        // Default sub-types
+                        if (val === 'LIABILITY') setNewAccountSubType('Credit Card');
+                        else if (val === 'ASSET') setNewAccountSubType('Checking');
+                        else if (val === 'OPERATING_EXPENSE') setNewAccountSubType('Utilities');
+                        else if (val === 'INCOME') setNewAccountSubType('Rental Income');
                         try {
                           const sug = await api.getSuggestedAccountNumber(val);
                           if (sug && (sug.suggested_number || (sug as any).suggested_account_number)) {
@@ -2545,7 +2690,7 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                           }
                         } catch {}
                       }}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 disabled:opacity-60"
                     >
                       <option value="OPERATING_EXPENSE">Operating Expense (60000s)</option>
                       <option value="COST_OF_GOODS_SOLD">Cost of Goods Sold (50000s)</option>
@@ -2563,16 +2708,74 @@ export const BankImportWizardModal: React.FC<BankImportWizardModalProps> = ({
                       onChange={(e) => setNewAccountSubType(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                     >
-                      <option value="Utilities">Utilities</option>
-                      <option value="Repairs & Maintenance">Repairs & Maintenance</option>
-                      <option value="Insurance">Insurance</option>
-                      <option value="Property Taxes">Property Taxes</option>
-                      <option value="Professional Fees">Professional Fees</option>
-                      <option value="Advertising">Advertising</option>
-                      <option value="Management Fees">Management Fees</option>
-                      <option value="General & Administrative">General & Administrative</option>
-                      <option value="Bank Fees">Bank Fees</option>
-                      <option value="Other Expense">Other Expense</option>
+                      {newAccountType === 'LIABILITY' && (
+                        <>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="Accounts Payable">Accounts Payable</option>
+                          <option value="Line of Credit">Line of Credit</option>
+                          <option value="Mortgage / Long-Term Debt">Mortgage / Long-Term Debt</option>
+                          <option value="Current Liability">Current Liability</option>
+                          <option value="Security Deposits Held">Security Deposits Held</option>
+                          <option value="Other Liability">Other Liability</option>
+                        </>
+                      )}
+                      {newAccountType === 'ASSET' && (
+                        <>
+                          <option value="Checking">Checking</option>
+                          <option value="Savings">Savings</option>
+                          <option value="Money Market">Money Market</option>
+                          <option value="Escrow">Escrow</option>
+                          <option value="Accounts Receivable">Accounts Receivable</option>
+                          <option value="Fixed Asset">Fixed Asset</option>
+                          <option value="Other Current Asset">Other Current Asset</option>
+                        </>
+                      )}
+                      {newAccountType === 'OPERATING_EXPENSE' && (
+                        <>
+                          <option value="Utilities">Utilities</option>
+                          <option value="Repairs & Maintenance">Repairs & Maintenance</option>
+                          <option value="Insurance">Insurance</option>
+                          <option value="Property Taxes">Property Taxes</option>
+                          <option value="Professional Fees">Professional Fees</option>
+                          <option value="Advertising">Advertising</option>
+                          <option value="Management Fees">Management Fees</option>
+                          <option value="General & Administrative">General & Administrative</option>
+                          <option value="Bank Fees">Bank Fees</option>
+                          <option value="Other Expense">Other Expense</option>
+                        </>
+                      )}
+                      {newAccountType === 'INCOME' && (
+                        <>
+                          <option value="Rental Income">Rental Income</option>
+                          <option value="Late Fees">Late Fees</option>
+                          <option value="Laundry & Parking">Laundry & Parking</option>
+                          <option value="Pet Fees">Pet Fees</option>
+                          <option value="Other Income">Other Income</option>
+                        </>
+                      )}
+                      {newAccountType === 'COGS' && (
+                        <>
+                          <option value="Property Supplies">Property Supplies</option>
+                          <option value="Contract Labor">Contract Labor</option>
+                          <option value="Turnover Costs">Turnover Costs</option>
+                          <option value="Other Direct Costs">Other Direct Costs</option>
+                        </>
+                      )}
+                      {newAccountType === 'EQUITY' && (
+                        <>
+                          <option value="Owner's Equity">Owner's Equity</option>
+                          <option value="Owner's Draw">Owner's Draw</option>
+                          <option value="Retained Earnings">Retained Earnings</option>
+                        </>
+                      )}
+                      {newAccountType === 'OTHER_INCOME_EXPENSE' && (
+                        <>
+                          <option value="Interest Expense">Interest Expense</option>
+                          <option value="Depreciation & Amortization">Depreciation & Amortization</option>
+                          <option value="Tax Penalty">Tax Penalty</option>
+                          <option value="Other Miscellaneous">Other Miscellaneous</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
