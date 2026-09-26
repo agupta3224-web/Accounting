@@ -96,14 +96,19 @@
   --tw-gradient-via: #f1f5f9 !important;
 }
 
-/* Crisp text contrast on light cards */
-[data-theme="light"] .bg-white .text-white,
-[data-theme="light"] .bg-slate-50 .text-white,
-[data-theme="light"] .bg-slate-100 .text-white,
-[data-theme="light"] .bg-slate-900 .text-white,
-[data-theme="light"] .bg-slate-850 .text-white,
-[data-theme="light"] .bg-slate-800 .text-white {
+/* Crisp text contrast on light cards - exclude buttons and elements on colored backgrounds */
+[data-theme="light"] .bg-white :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white,
+[data-theme="light"] .bg-slate-50 :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white,
+[data-theme="light"] .bg-slate-100 :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white,
+[data-theme="light"] .bg-slate-900 :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white,
+[data-theme="light"] .bg-slate-850 :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white,
+[data-theme="light"] .bg-slate-800 :not(button):not(button *):not([class*="bg-"]):not([class*="bg-"] *).text-white {
   color: #0f172a !important;
+}
+
+[data-theme="light"] button.text-white,
+[data-theme="light"] button .text-white {
+  color: #ffffff !important;
 }
 
 [data-theme="light"] .bg-white .text-slate-100,

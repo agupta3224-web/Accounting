@@ -236,11 +236,11 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
             onClick={() => { setActiveForm('CLASS'); setFormError(null); setFormSuccess(null); if (companies[0]) setSelectedCompId(companies[0].id); }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
               isLight
-                ? 'bg-white hover:bg-indigo-50 text-indigo-950 border-2 border-indigo-700 shadow-xs'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                ? 'bg-white hover:bg-purple-50 text-purple-900 border-2 border-purple-400 shadow-xs'
+                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-xs'
             }`}
           >
-            <Shield className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-700' : 'text-indigo-200'}`} />
+            <Shield className={`w-3.5 h-3.5 ${isLight ? 'text-purple-600' : 'text-purple-200'}`} />
             <span>&lt;Create a New Class&gt; (LLC)</span>
           </button>
 
@@ -261,34 +261,34 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
 
       {/* Class Structure Architecture Display Banner */}
       {isLight ? (
-        <div className="bg-white text-slate-950 p-4 rounded-xl shadow-xs border-2 border-indigo-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white text-slate-950 p-4 rounded-xl shadow-xs border-2 border-purple-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-indigo-50 text-indigo-950 border-2 border-indigo-600 rounded-xl shadow-2xs shrink-0">
-              <Layers className="w-5 h-5 text-indigo-700" />
+            <div className="p-2.5 bg-purple-50 text-purple-700 border-2 border-purple-300 rounded-xl shadow-2xs shrink-0">
+              <Layers className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-indigo-950">
+              <div className="text-xs font-black uppercase tracking-wider text-purple-900">
                 Class Structure Architecture
               </div>
               <div className="text-sm font-black text-slate-950 flex flex-wrap items-center gap-2 mt-0.5">
                 <span className="text-slate-950 font-black">{companies[0]?.name || 'Rental Portfolio'}</span>
-                <span className="text-indigo-700 font-black text-sm">&gt;</span>
-                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-indigo-950 font-black text-xs border-2 border-indigo-700 shadow-2xs">
+                <span className="text-purple-500 font-black text-sm">&gt;</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-purple-900 font-black text-xs border-2 border-purple-300 shadow-2xs">
                   {classes.length} LLC{classes.length === 1 ? '' : 's'}
                 </span>
-                <span className="text-indigo-700 font-black text-sm">&gt;</span>
+                <span className="text-purple-500 font-black text-sm">&gt;</span>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-emerald-950 font-black text-xs border-2 border-emerald-700 shadow-2xs">
                   {properties.length} Sub-Class Holding{properties.length === 1 ? '' : 's'}
                 </span>
               </div>
             </div>
           </div>
-          <div className="bg-white border-2 border-indigo-700 px-4 py-2 rounded-xl shadow-2xs text-xs font-bold text-slate-900 shrink-0 flex flex-wrap items-center gap-1.5">
-            <span className="font-black text-indigo-950 uppercase tracking-wide text-[11px] mr-1.5">Example:</span>
+          <div className="bg-white border-2 border-purple-300 px-4 py-2 rounded-xl shadow-2xs text-xs font-bold text-slate-900 shrink-0 flex flex-wrap items-center gap-1.5">
+            <span className="font-black text-purple-900 uppercase tracking-wide text-[11px] mr-1.5">Example:</span>
             <span className="font-mono text-emerald-950 font-black">Rental Portfolio</span>
-            <span className="text-indigo-700 font-black mx-1">&gt;</span>
-            <span className="font-mono text-indigo-950 font-black">2 LLCs</span>
-            <span className="text-indigo-700 font-black mx-1">&gt;</span>
+            <span className="text-purple-500 font-black mx-1">&gt;</span>
+            <span className="font-mono text-purple-900 font-black">2 LLCs</span>
+            <span className="text-purple-500 font-black mx-1">&gt;</span>
             <span className="font-mono text-emerald-950 font-black">Holdings under each LLC</span>
           </div>
         </div>
@@ -470,6 +470,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   type="submit"
                   disabled={formLoading}
                   className="px-5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm cursor-pointer"
+                  style={{ color: '#ffffff' }}
                 >
                   {formLoading ? 'Creating Company...' : 'Save Company'}
                 </button>
@@ -514,11 +515,11 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                   placeholder="e.g., Special purpose entity or shared overhead bucket"
                   value={llcDesc}
                   onChange={e => setLlcDesc(e.target.value)}
-                  className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                  className="w-full text-xs font-medium rounded-lg border border-slate-300 px-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 outline-hidden focus:ring-2 focus:ring-purple-400 shadow-2xs"
                 />
               </div>
 
-              <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-1.5">
+              <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-1.5">
                 <label className="flex items-start space-x-2.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -531,7 +532,7 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                         setLlcDesc('Shared portfolio/company expenses (e.g. telephone, software, legal, corporate overhead)');
                       }
                     }}
-                    className="w-4 h-4 mt-0.5 text-indigo-600 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 mt-0.5 text-purple-600 rounded focus:ring-purple-400"
                   />
                   <div className="text-xs">
                     <span className="font-bold text-slate-900">Common Class (Shared Portfolio / Company Expenses)</span>
@@ -553,7 +554,8 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-white bg-purple-500 hover:bg-purple-400 active:bg-purple-600 rounded-lg shadow-sm cursor-pointer transition"
+                  style={{ color: '#ffffff' }}
                 >
                   {formLoading ? 'Creating Class...' : 'Save Class (LLC)'}
                 </button>
@@ -726,7 +728,8 @@ export const PropertiesManager: React.FC<PropertiesManagerProps> = ({
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm"
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm cursor-pointer"
+                  style={{ color: '#ffffff' }}
                 >
                   {formLoading ? 'Creating Sub-Class...' : 'Save Sub-Class Property'}
                 </button>
