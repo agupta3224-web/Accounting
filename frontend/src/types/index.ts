@@ -977,3 +977,120 @@ export interface SampleBankStatementFile {
   recommended_account_number: string;
 }
 
+// QuickBooks Migration Hub Types
+export interface QuickBooksMigrationClass {
+  name: string;
+  entity_type?: string;
+  properties_count?: number;
+  description?: string;
+  ein?: string;
+  office_address_line1?: string;
+  office_city?: string;
+  office_state?: string;
+  office_zip?: string;
+  contact_name?: string;
+  contact_phone?: string;
+}
+
+export interface QuickBooksMigrationProperty {
+  class_name: string;
+  name: string;
+  full_path?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  property_type?: string;
+  units_count?: number;
+  is_auto_created?: boolean;
+}
+
+export interface QuickBooksMigrationVendor {
+  account_number?: string;
+  name: string;
+  print_as?: string;
+  contact_person?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  tax_id?: string | null;
+  is_1099_eligible?: boolean;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  notes?: string | null;
+  default_category_name?: string | null;
+}
+
+export interface QuickBooksMigrationTransaction {
+  id?: number;
+  date: string;
+  account_name: string;
+  payee: string;
+  amount: number;
+  is_credit?: boolean;
+  memo?: string;
+  check_number?: string | null;
+  class_name?: string | null;
+  property_name?: string | null;
+}
+
+export interface QuickBooksMigrationSummary {
+  total_classes: number;
+  total_properties: number;
+  total_accounts: number;
+  total_vendors: number;
+  total_transactions: number;
+  total_assets_balance: number;
+  total_liabilities_balance: number;
+  total_equity_balance: number;
+  types_breakdown: Record<string, number>;
+}
+
+export interface QuickBooksMigrationPreviewResult {
+  status: 'SUCCESS' | 'ENCRYPTED_OR_RESTRICTED';
+  format: 'QBW' | 'IIF' | 'EXCEL' | 'ZIP' | 'CSV';
+  filename: string;
+  company_name: string;
+  can_convert?: boolean;
+  error?: string;
+  guidance?: string;
+  detected_files?: string[];
+  classes: QuickBooksMigrationClass[];
+  properties: QuickBooksMigrationProperty[];
+  accounts: QuickBooksAccountItem[];
+  vendors: QuickBooksMigrationVendor[];
+  transactions: QuickBooksMigrationTransaction[];
+  summary: QuickBooksMigrationSummary;
+}
+
+export interface QuickBooksConvertPayload {
+  company_name: string;
+  ein?: string | null;
+  notes?: string | null;
+  classes: QuickBooksMigrationClass[];
+  properties: QuickBooksMigrationProperty[];
+  accounts: QuickBooksAccountItem[];
+  vendors: QuickBooksMigrationVendor[];
+  transactions?: QuickBooksMigrationTransaction[];
+  create_opening_balances?: boolean;
+  import_transactions?: boolean;
+}
+
+export type CompanyFile = CompanyFileItem;
+
+export interface QuickBooksConvertResult {
+  success: boolean;
+  company_key: string;
+  company_name: string;
+  accounts_imported: number;
+  classes_imported: number;
+  properties_imported: number;
+  vendors_imported: number;
+  transactions_imported: number;
+  active_company: CompanyFileItem;
+  message: string;
+}
+

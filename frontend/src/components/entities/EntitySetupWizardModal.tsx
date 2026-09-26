@@ -76,8 +76,8 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
   const handleQbFileSelect = async (selectedFile: File) => {
     setQbError(null);
     const fname = selectedFile.name.toLowerCase();
-    if (!fname.endsWith('.xlsx') && !fname.endsWith('.xls') && !fname.endsWith('.csv') && !fname.endsWith('.txt')) {
-      setQbError('Please upload a valid Excel file (.xlsx, .xls) or CSV export (.csv) from QuickBooks.');
+    if (!fname.endsWith('.xlsx') && !fname.endsWith('.xls') && !fname.endsWith('.csv') && !fname.endsWith('.txt') && !fname.endsWith('.iif')) {
+      setQbError('Please upload a valid Excel file (.xlsx, .xls), CSV export (.csv), or IIF list (.iif) from QuickBooks.');
       return;
     }
     setQbFile(selectedFile);
@@ -904,7 +904,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                             <span>Select QuickBooks File</span>
                             <input
                               type="file"
-                              accept=".xlsx,.xls,.csv,.tsv,.txt"
+                              accept=".xlsx,.xls,.csv,.tsv,.txt,.iif"
                               onChange={(e) => {
                                 if (e.target.files && e.target.files.length > 0) {
                                   handleQbFileSelect(e.target.files[0]);

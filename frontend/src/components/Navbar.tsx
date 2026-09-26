@@ -40,6 +40,7 @@ interface NavbarProps {
   onOpenLicenseModal: () => void;
   onOpenCreateNewCompany: () => void;
   onOpenEntitySetup: () => void;
+  onOpenQuickBooksMigrator?: () => void;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
 }
@@ -60,6 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLicenseModal,
   onOpenCreateNewCompany,
   onOpenEntitySetup,
+  onOpenQuickBooksMigrator,
   theme,
   setTheme
 }) => {
@@ -233,6 +235,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                               <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Add LLC or Org to current file</div>
                             </div>
                           </button>
+
+                          {onOpenQuickBooksMigrator && (
+                            <button
+                              onClick={() => {
+                                setShowCompanyMenu(false);
+                                onOpenQuickBooksMigrator();
+                              }}
+                              className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center space-x-3 cursor-pointer group transition ${
+                                isLight ? 'hover:bg-slate-100 text-slate-700 hover:text-slate-900' : 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                              }`}
+                            >
+                              <div className="p-1.5 bg-purple-500/20 text-purple-500 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition">
+                                <FileSpreadsheet className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className={`font-bold ${isLight ? 'text-slate-800 group-hover:text-purple-700' : 'text-slate-100 group-hover:text-purple-300'}`}>Convert QuickBooks File...</div>
+                                <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Convert .qbw, .iif, or Excel to company</div>
+                              </div>
+                            </button>
+                          )}
                         </div>
 
                         <div className={`border-t py-1 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>

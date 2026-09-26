@@ -742,6 +742,16 @@ def parse_quickbooks_coa_file(file_bytes: bytes, filename: str) -> Dict[str, Any
         if not text:
             text = file_bytes.decode("utf-8", errors="ignore")
 
+        if filename.lower().endswith(".iif") or text.startswith("!") or "\t!ACCNT" in text or "\n!ACCNT" in text:
+            from .qb_migrator_engine import parse_quickbooks_iif
+            iif_res = parse_quickbooks_iif(text, filename)
+            return {
+                "filename": filename,
+                "sheet_name": "IIF Lists",
+                "accounts": iif_res["accounts"],
+                "summary": iif_res["summary"]
+            }
+
         first_line = text.splitlines()[0] if text.splitlines() else ""
         delimiter = "\t" if "\t" in first_line else ","
         reader = csv.reader(io.StringIO(text), delimiter=delimiter)

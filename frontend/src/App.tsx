@@ -17,6 +17,7 @@ import { WriteCheckModal } from './components/WriteCheckModal';
 import { GeneralJournalModal } from './components/GeneralJournalModal';
 import { CheckPrintPreviewModal } from './components/CheckPrintPreviewModal';
 import { EntitySetupWizardModal } from './components/entities/EntitySetupWizardModal';
+import { QuickBooksMigrationModal } from './components/QuickBooksMigrationModal';
 import { 
   Company, 
   Property, 
@@ -82,6 +83,7 @@ export function App() {
   const [selectedCheckForPrint, setSelectedCheckForPrint] = useState<CheckRecord | null>(null);
   const [isEntityWizardOpen, setIsEntityWizardOpen] = useState(false);
   const [wizardIsCreatingNewCompany, setWizardIsCreatingNewCompany] = useState(false);
+  const [isQuickBooksMigrationOpen, setIsQuickBooksMigrationOpen] = useState(false);
 
   const handleOpenCreateNewCompany = () => {
     setWizardIsCreatingNewCompany(true);
@@ -251,6 +253,7 @@ export function App() {
         onOpenLicenseModal={() => setIsLicenseModalOpen(true)}
         onOpenCreateNewCompany={handleOpenCreateNewCompany}
         onOpenEntitySetup={handleOpenEntitySetup}
+        onOpenQuickBooksMigrator={() => setIsQuickBooksMigrationOpen(true)}
         theme={theme}
         setTheme={setTheme}
       />
@@ -416,6 +419,17 @@ export function App() {
         isCreatingNewCompany={wizardIsCreatingNewCompany}
         onSuccess={async (created) => {
           setIsEntityWizardOpen(false);
+          await checkSession();
+          setActiveTab('dashboard');
+        }}
+      />
+
+      {/* QuickBooks Full Company Migration Converter Modal */}
+      <QuickBooksMigrationModal
+        isOpen={isQuickBooksMigrationOpen}
+        onClose={() => setIsQuickBooksMigrationOpen(false)}
+        onCompanyCreated={async (_createdCompany) => {
+          setIsQuickBooksMigrationOpen(false);
           await checkSession();
           setActiveTab('dashboard');
         }}

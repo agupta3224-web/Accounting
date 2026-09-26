@@ -41,7 +41,10 @@ import {
   RawCsvPreviewResponse,
   QuickBooksAccountItem,
   QuickBooksCoaPreviewResult,
-  QuickBooksImportResult
+  QuickBooksImportResult,
+  QuickBooksMigrationPreviewResult,
+  QuickBooksConvertPayload,
+  QuickBooksConvertResult
 } from '../types';
 
 const API_BASE = '/api';
@@ -496,6 +499,34 @@ export const api = {
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || 'Failed to import QuickBooks export file');
+    }
+    return res.json();
+  },
+
+  // QuickBooks Full Migration Hub API
+  async previewQuickBooksMigration(file: File): Promise<QuickBooksMigrationPreviewResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/quickbooks/migrate/preview`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to parse QuickBooks migration file');
+    }
+    return res.json();
+  },
+
+  async convertQuickBooksMigration(payload: QuickBooksConvertPayload): Promise<QuickBooksConvertResult> {
+    const res = await fetch(`${API_BASE}/quickbooks/migrate/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to convert QuickBooks company file');
     }
     return res.json();
   },

@@ -8,6 +8,7 @@ import {
 import { CompanyFileItem, BackupRecord } from '../types';
 import { api } from '../services/api';
 import { EntitySetupWizardModal } from '../components/entities/EntitySetupWizardModal';
+import { QuickBooksMigrationModal } from '../components/QuickBooksMigrationModal';
 
 interface CompanyWelcomeScreenProps {
   onCompanyOpened: () => void;
@@ -22,6 +23,8 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
 
   // New Company Guided Entity Setup State
   const [showEntityWizard, setShowEntityWizard] = useState(false);
+  // QuickBooks Migration Hub State
+  const [showQuickBooksMigrator, setShowQuickBooksMigrator] = useState(false);
 
   // Delete Company Modal & Retention Pruning State
   const [companyToDelete, setCompanyToDelete] = useState<CompanyFileItem | null>(null);
@@ -135,9 +138,22 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
 
         {/* Notifications */}
         {error && (
-          <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs flex items-center space-x-2 max-w-2xl mx-auto">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            <span>{error}</span>
+          <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-2xl mx-auto animate-fade-in shadow-lg shadow-red-950/50">
+            <div className="flex items-center space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>
+                {error.toLowerCase().includes('failed to fetch')
+                  ? 'Backend server was temporarily starting up. The service is now ready.'
+                  : error}
+              </span>
+            </div>
+            <button
+              onClick={() => loadFiles()}
+              className="px-3 py-1 bg-red-800/80 hover:bg-red-700 text-white rounded-lg font-bold text-xs shrink-0 flex items-center space-x-1.5 transition cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Connection</span>
+            </button>
           </div>
         )}
 
@@ -148,30 +164,30 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
           </div>
         )}
 
-        {/* 3 Main Choice Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 4 Main Choice Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Sample Company */}
           <div 
             onClick={() => handleOpenCompany('sample_company')}
-            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:shadow-emerald-950/40 transition cursor-pointer group"
+            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-emerald-950/40 transition cursor-pointer group"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
-                  <Sparkles className="w-6 h-6" />
+                <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                   Instant Demo
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition">
+              <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition">
                 Open Sample Company
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Explore a pre-configured multi-property portfolio (Sunset Palms, 2908 Depot, Oakridge Duplex) with sample statements & monthly P&L.
+                Explore a pre-configured multi-property portfolio (Sunset Palms, 2908 Depot, Oakridge Duplex) with statements & monthly P&L.
               </p>
             </div>
-            <div className="pt-6 flex items-center justify-between text-xs font-semibold text-emerald-400 group-hover:translate-x-1 transition">
+            <div className="pt-5 flex items-center justify-between text-xs font-semibold text-emerald-400 group-hover:translate-x-1 transition">
               <span>Launch Sample File</span>
               <ArrowRight className="w-4 h-4" />
             </div>
@@ -180,34 +196,61 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
           {/* Card 2: Create New Company */}
           <div 
             onClick={() => setShowEntityWizard(true)}
-            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-indigo-500/40 hover:border-indigo-400 rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:shadow-indigo-950/40 transition cursor-pointer group"
+            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-indigo-500/40 hover:border-indigo-400 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-indigo-950/40 transition cursor-pointer group"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl">
-                  <PlusCircle className="w-6 h-6" />
+                <div className="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                  <PlusCircle className="w-5 h-5" />
                 </div>
                 <span className="text-[10px] uppercase font-bold tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
                   New Workspace
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition">
-                &lt;Create a New Company&gt;
+              <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition">
+                Create a New Company
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Initialize a brand-new clean investor database file with a standard chart of accounts, custom LLC classes, and property assets.
+                Initialize a brand-new clean investor database with standard chart of accounts, custom LLC classes, and properties.
               </p>
             </div>
-            <div className="pt-6 flex items-center justify-between text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition">
-              <span>Start New Company Wizard</span>
+            <div className="pt-5 flex items-center justify-between text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition">
+              <span>Start Company Wizard</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Card 3: Restore Backup */}
+          {/* Card 3: Convert QuickBooks File */}
+          <div 
+            onClick={() => setShowQuickBooksMigrator(true)}
+            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-purple-500/40 hover:border-purple-400 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-purple-950/40 transition cursor-pointer group"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="p-2.5 bg-purple-500/20 text-purple-400 rounded-xl">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                  Migration Hub
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white group-hover:text-purple-300 transition">
+                Convert QuickBooks File
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Convert a QuickBooks Desktop (.qbw), IIF lists export, or multi-report Excel pack into a full PropBooks company.
+              </p>
+            </div>
+            <div className="pt-5 flex items-center justify-between text-xs font-semibold text-purple-400 group-hover:translate-x-1 transition">
+              <span>Launch QB Converter</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Card 4: Restore Backup */}
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-slate-700 hover:border-cyan-400 rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:shadow-cyan-950/40 transition cursor-pointer group"
+            className="bg-slate-800/80 hover:bg-slate-800 border-2 border-slate-700 hover:border-cyan-400 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-cyan-950/40 transition cursor-pointer group"
           >
             <input
               type="file"
@@ -218,21 +261,21 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
             />
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="p-3 bg-cyan-500/20 text-cyan-400 rounded-xl">
-                  {restoring ? <RefreshCw className="w-6 h-6 animate-spin" /> : <RotateCcw className="w-6 h-6" />}
+                <div className="p-2.5 bg-cyan-500/20 text-cyan-400 rounded-xl">
+                  {restoring ? <RefreshCw className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
                 </div>
                 <span className="text-[10px] uppercase font-bold tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full">
                   Disaster Recovery
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition">
+              <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition">
                 Restore from Backup
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Restore your accounting file from a previously saved <span className="font-mono text-cyan-300">.propbackup</span> snapshot archive.
               </p>
             </div>
-            <div className="pt-6 flex items-center justify-between text-xs font-semibold text-cyan-400 group-hover:translate-x-1 transition">
+            <div className="pt-5 flex items-center justify-between text-xs font-semibold text-cyan-400 group-hover:translate-x-1 transition">
               <span>{restoring ? 'Restoring Archive...' : 'Select Backup File'}</span>
               <ArrowRight className="w-4 h-4" />
             </div>
@@ -428,6 +471,19 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
           }, 300);
         }}
         isCreatingNewCompany={true}
+      />
+
+      {/* QuickBooks Migration Converter Modal */}
+      <QuickBooksMigrationModal
+        isOpen={showQuickBooksMigrator}
+        onClose={() => setShowQuickBooksMigrator(false)}
+        onCompanyCreated={(_newCompany) => {
+          setShowQuickBooksMigrator(false);
+          setSuccessMsg('QuickBooks company converted successfully! Loading workspace...');
+          setTimeout(() => {
+            onCompanyOpened();
+          }, 300);
+        }}
       />
 
       {/* Delete Company Confirmation Modal */}

@@ -61,6 +61,10 @@ from .coa_engine import (
     parse_quickbooks_coa_file,
     import_quickbooks_coa_to_db
 )
+from .qb_migrator_engine import (
+    parse_quickbooks_migration_file,
+    execute_quickbooks_migration
+)
 from .printer_engine import get_system_printers, render_printable_pnl_html
 
 @asynccontextmanager
@@ -250,6 +254,18 @@ class QuickBooksImportRequest(BaseModel):
     accounts: List[Dict[str, Any]]
     overwrite: Optional[bool] = False
     create_opening_balances: Optional[bool] = True
+
+class QuickBooksMigrationConvertRequest(BaseModel):
+    company_name: str
+    ein: Optional[str] = None
+    notes: Optional[str] = None
+    classes: List[Dict[str, Any]] = []
+    properties: List[Dict[str, Any]] = []
+    accounts: List[Dict[str, Any]] = []
+    vendors: List[Dict[str, Any]] = []
+    transactions: Optional[List[Dict[str, Any]]] = []
+    create_opening_balances: Optional[bool] = True
+    import_transactions: Optional[bool] = True
 
 
 class JournalEntryLinePayload(BaseModel):
@@ -1375,6 +1391,79 @@ async def import_quickbooks_coa_file_endpoint(
             create_opening_balances=create_opening_balances
         )
         result["preview_summary"] = parsed["summary"]
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# --- QuickBooks Company File Migration Hub Endpoints ---
+
+@app.post("/api/quickbooks/migrate/preview")
+async def preview_quickbooks_migration_endpoint(file: UploadFile = File(...)):
+    """
+    Parses a QuickBooks company file (.qbw, .iif, .xlsx, .zip, .csv) and returns
+    a comprehensive preview of extracted Classes (LLCs), Properties (Assets),
+    Chart of Accounts, Vendors, and Transactions.
+    """
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+        preview_data = parse_quickbooks_migration_file(content, file.filename or "QuickBooks_Export.iif")
+        return preview_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/quickbooks/migrate/convert")
+def convert_quickbooks_migration_endpoint(
+    req: QuickBooksMigrationConvertRequest
+):
+    """
+    Provisions a new .propbooks company file populated with all selected QuickBooks
+    classes, properties, accounts, vendors, starting balances, and transactions.
+    Automatically switches the active workspace database to the newly created company.
+    """
+    try:
+        if not req.company_name or not req.company_name.strip():
+            raise HTTPException(status_code=400, detail="Company name is required.")
+        payload_data = req.model_dump() if hasattr(req, "model_dump") else req.dict()
+        result = execute_quickbooks_migration(payload_data, company_manager)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/quickbooks/migrate/convert-file")
+async def convert_quickbooks_file_direct_endpoint(
+    file: UploadFile = File(...),
+    company_name: Optional[str] = Form(None),
+    ein: Optional[str] = Form(None),
+    create_opening_balances: bool = Form(True),
+    import_transactions: bool = Form(True)
+):
+    """
+    Direct 1-step upload and conversion for a QuickBooks company file.
+    """
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+        parsed = parse_quickbooks_migration_file(content, file.filename or "QuickBooks_Export.iif")
+        if parsed.get("status") == "ENCRYPTED_OR_RESTRICTED":
+            return parsed
+
+        target_name = company_name.strip() if company_name and company_name.strip() else parsed.get("company_name", "Migrated QuickBooks Company")
+        payload = {
+            "company_name": target_name,
+            "ein": ein,
+            "classes": parsed.get("classes", []),
+            "properties": parsed.get("properties", []),
+            "accounts": parsed.get("accounts", []),
+            "vendors": parsed.get("vendors", []),
+            "transactions": parsed.get("transactions", []),
+            "create_opening_balances": create_opening_balances,
+            "import_transactions": import_transactions
+        }
+        result = execute_quickbooks_migration(payload, company_manager)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
