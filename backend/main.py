@@ -66,8 +66,14 @@ async def lifespan(app: FastAPI):
     sample_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sample_statements")
     generate_sample_statements(sample_dir)
     generate_sample_bank_statements(sample_dir)
+    # Retention policy on startup: retain last 3 backups and company versions
+    company_manager.prune_backups(keep_count=3)
+    company_manager.prune_companies(keep_count=3)
     yield
+    # Automatic safety backup and retention on shutdown / exit: create backup, delete oldest, keep 3
     company_manager.auto_backup_on_close()
+    company_manager.prune_backups(keep_count=3)
+    company_manager.prune_companies(keep_count=3)
 
 app = FastAPI(title="PropBooks Real Estate Accounting - Desktop Pro Edition", version="2.0.0", lifespan=lifespan)
 
@@ -470,14 +476,29 @@ def delete_system_company(company_key: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/system/companies/prune-restored")
-def prune_restored_system_companies(keep_count: int = 4):
+def prune_restored_system_companies(keep_count: int = 3):
     try:
-        deleted = company_manager.prune_restored_companies(keep_count=keep_count)
+        deleted_comps = company_manager.prune_companies(keep_count=keep_count)
+        deleted_bkps = company_manager.prune_backups(keep_count=keep_count)
         return {
             "status": "SUCCESS",
-            "message": f"Kept last {keep_count} restored companies, pruned {len(deleted)} older restored files.",
+            "message": f"Kept last {keep_count} backups and company files. Pruned {len(deleted_bkps)} backup(s) and {len(deleted_comps)} company file(s).",
+            "pruned_companies_count": len(deleted_comps),
+            "pruned_backups_count": len(deleted_bkps),
+            "pruned_keys": deleted_comps
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/system/backups/prune")
+def prune_system_backups(keep_count: int = 3):
+    try:
+        deleted = company_manager.prune_backups(keep_count=keep_count)
+        return {
+            "status": "SUCCESS",
+            "message": f"Kept last {keep_count} backups per company, pruned {len(deleted)} older backup file(s).",
             "pruned_count": len(deleted),
-            "pruned_keys": deleted
+            "deleted_backups": deleted
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

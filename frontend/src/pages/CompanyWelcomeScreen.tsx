@@ -101,11 +101,11 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
     try {
       setPruning(true);
       setError(null);
-      const res = await api.pruneRestoredCompanies(4);
-      setSuccessMsg(res.message || 'Restored files pruned: retaining the 4 most recent restored company files.');
+      const res = await api.pruneRestoredCompanies(3);
+      setSuccessMsg(res.message || 'Files and backups pruned: retaining the 3 most recent backups and company files.');
       await loadFiles();
     } catch (err: any) {
-      setError(err.message || 'Failed to prune restored company files');
+      setError(err.message || 'Failed to prune old company files and backups');
     } finally {
       setPruning(false);
     }
@@ -248,7 +248,7 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
                   <span>Existing Company Files on this Machine</span>
                 </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Restored Files: Last 4 Retained
+                  Retention: Last 3 Kept
                 </span>
               </div>
               <p className="text-xs text-slate-400">Select a company database to open, delete unwanted files, or manage backups</p>
@@ -257,11 +257,11 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
               <button
                 onClick={handlePruneRestoredFiles}
                 disabled={pruning}
-                title="Only keep the last 4 restored company files and delete the rest"
+                title="Only keep the last 3 backups and company file versions and delete the rest"
                 className="text-xs font-semibold px-2.5 py-1.5 bg-purple-950/50 hover:bg-purple-900/70 text-purple-300 border border-purple-700/50 rounded-lg transition cursor-pointer flex items-center space-x-1"
               >
                 <RotateCcw className={`w-3 h-3 ${pruning ? 'animate-spin' : ''}`} />
-                <span>{pruning ? 'Pruning...' : 'Prune Restored (Keep 4)'}</span>
+                <span>{pruning ? 'Pruning...' : 'Prune (Keep 3)'}</span>
               </button>
               <button
                 onClick={loadFiles}
@@ -364,13 +364,13 @@ export const CompanyWelcomeScreen: React.FC<CompanyWelcomeScreenProps> = ({ onCo
                 <Archive className="w-4 h-4 text-cyan-400" />
                 <span>Automatic & Manual Safety Backups</span>
               </h2>
-              <p className="text-xs text-slate-400">Backups are created automatically on close/exit</p>
+              <p className="text-xs text-slate-400">Backups are created automatically on close/exit. System automatically retains the last 3 backups per company and deletes older ones.</p>
             </div>
           </div>
 
           {backups.length === 0 ? (
             <div className="text-xs text-slate-500 py-4 text-center">
-              No backups created yet. An automatic backup will be saved whenever you close a company or exit.
+              No backups created yet. An automatic backup will be saved whenever you close a company or exit. System automatically keeps the last 3 backups.
             </div>
           ) : (
             <div className="overflow-x-auto">

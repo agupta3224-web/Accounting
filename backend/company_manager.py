@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import zipfile
 import json
@@ -17,6 +18,41 @@ os.makedirs(COMPANIES_DIR, exist_ok=True)
 os.makedirs(BACKUPS_DIR, exist_ok=True)
 os.makedirs(SAMPLE_DIR, exist_ok=True)
 
+def normalize_company_key(raw_key: str) -> str:
+    """Extracts base company key, stripping timestamps or restored prefixes."""
+    clean = raw_key
+    if clean.startswith("restored_"):
+        clean = clean[len("restored_"):]
+    # Strip trailing timestamp: _YYYYMMDD_HHMMSS or _<digits>
+    clean = re.sub(r'_\d{8}_\d{6}$', '', clean)
+    clean = re.sub(r'_\d{9,}$', '', clean)
+    return clean.strip("_")
+
+def get_backup_company_group(filepath: str, filename: str) -> str:
+    """Returns normalized company key for grouping and pruning backups."""
+    comp_key = None
+    try:
+        with zipfile.ZipFile(filepath, "r") as zf:
+            if "metadata.json" in zf.namelist():
+                meta = json.loads(zf.read("metadata.json").decode("utf-8"))
+                comp_key = meta.get("company_key")
+    except Exception:
+        pass
+
+    if not comp_key:
+        base = filename
+        for ext in (".propbackup", ".zip"):
+            if base.endswith(ext):
+                base = base[:-len(ext)]
+                break
+        if base.startswith("AUTO_BACKUP_"):
+            base = base[len("AUTO_BACKUP_"):]
+        elif base.startswith("MANUAL_BACKUP_"):
+            base = base[len("MANUAL_BACKUP_"):]
+        comp_key = base
+
+    return normalize_company_key(comp_key)
+
 class CompanyManager:
     def __init__(self):
         self.active_company_key: Optional[str] = None
@@ -24,60 +60,145 @@ class CompanyManager:
         self.active_db_path: Optional[str] = None
         self.engine = None
         self.SessionLocal = None
-        self.prune_restored_companies(keep_count=4)
+        self.prune_companies(keep_count=3)
+        self.prune_backups(keep_count=3)
         self._init_sample_company()
 
     def get_db_path(self, company_key: str) -> str:
         return os.path.join(COMPANIES_DIR, f"{company_key}.propbooks")
 
-    def prune_restored_companies(self, keep_count: int = 4) -> List[str]:
+    def prune_companies(self, keep_count: int = 3) -> List[str]:
         """
-        Enforces retention policy: keeps only the last `keep_count` restored company files and deletes older ones.
+        Enforces retention policy on company database files (keeps only last 3, deletes older ones):
+        1. Restored companies (`restored_*.propbooks`): keeps only the last `keep_count` (3) restored files.
+        2. Timestamped / duplicate versions of the same company (e.g. `skyline_portfolio_holdings_llc_<timestamp>.propbooks`):
+           groups by base company name, keeps only the latest `keep_count` (3) versions, and deletes the rest.
         Returns the list of deleted company keys.
         """
-        restored_files = []
+        deleted_keys = []
+        if not os.path.exists(COMPANIES_DIR):
+            return deleted_keys
+
+        # Group company files by base name
+        groups: Dict[str, List[Dict[str, Any]]] = {}
+
         for f in os.listdir(COMPANIES_DIR):
-            if f.startswith("restored_") and f.endswith(".propbooks"):
-                full_path = os.path.join(COMPANIES_DIR, f)
+            if not f.endswith(".propbooks"):
+                continue
+            key = f[:-len(".propbooks")]
+            if key == "sample_company":
+                continue  # Never delete built-in sample demo company
+
+            full_path = os.path.join(COMPANIES_DIR, f)
+            try:
+                mtime = os.stat(full_path).st_mtime
+            except OSError:
+                mtime = 0
+
+            if key.startswith("restored_"):
+                base_key = "__restored_companies__"
+            else:
+                base_key = normalize_company_key(key)
+
+            groups.setdefault(base_key, []).append({
+                "key": key,
+                "filename": f,
+                "filepath": full_path,
+                "mtime": mtime
+            })
+
+        for base_key, flist in groups.items():
+            if len(flist) > keep_count:
+                flist.sort(key=lambda x: x["mtime"], reverse=True)
+
+                # Prioritize keeping the clean un-timestamped base file if it exists
+                clean_base_item = next((item for item in flist if item["key"] == base_key), None)
+                retained = []
+                if clean_base_item:
+                    retained.append(clean_base_item)
+
+                for item in flist:
+                    if len(retained) >= keep_count:
+                        break
+                    if item not in retained:
+                        retained.append(item)
+
+                to_delete = [item for item in flist if item not in retained]
+                for item in to_delete:
+                    # Never delete active company
+                    if item["key"] == self.active_company_key:
+                        continue
+                    try:
+                        if os.path.exists(item["filepath"]):
+                            os.remove(item["filepath"])
+                            deleted_keys.append(item["key"])
+                    except Exception as e:
+                        print(f"Warning: Failed to delete old company file {item['filepath']}: {e}")
+
+        if deleted_keys:
+            print(f"[CompanyManager] Company retention policy enforced (keep last {keep_count}): deleted {len(deleted_keys)} old company files.")
+        return deleted_keys
+
+    def prune_restored_companies(self, keep_count: int = 3) -> List[str]:
+        """Backward-compatible alias for company file retention."""
+        return self.prune_companies(keep_count=keep_count)
+
+    def prune_backups(self, keep_count: int = 3, company_key: Optional[str] = None) -> List[str]:
+        """
+        Enforces backup retention policy: keeps only the last `keep_count` (default: 3) backups
+        and deletes the oldest backups.
+        If `company_key` is provided, prunes backups for that specific company.
+        If `company_key` is None, groups all backups by company and prunes each group to `keep_count`.
+        Returns the list of deleted backup filenames.
+        """
+        if not os.path.exists(BACKUPS_DIR):
+            return []
+
+        backups_by_group: Dict[str, List[Dict[str, Any]]] = {}
+
+        for f in os.listdir(BACKUPS_DIR):
+            if f.endswith(".propbackup") or f.endswith(".zip"):
+                # Clean up any leftover temporary restore files
+                if f.startswith("temp_restore_"):
+                    try:
+                        os.remove(os.path.join(BACKUPS_DIR, f))
+                    except Exception:
+                        pass
+                    continue
+
+                full_path = os.path.join(BACKUPS_DIR, f)
                 try:
                     mtime = os.stat(full_path).st_mtime
                 except OSError:
                     mtime = 0
-                key = f[:-len(".propbooks")]
-                restored_files.append({
+
+                group_key = get_backup_company_group(full_path, f)
+                if company_key and group_key != normalize_company_key(company_key):
+                    continue
+
+                backups_by_group.setdefault(group_key, []).append({
                     "filename": f,
                     "filepath": full_path,
-                    "key": key,
                     "mtime": mtime
                 })
 
-        # Sort descending by modification time (newest restored files first)
-        restored_files.sort(key=lambda x: x["mtime"], reverse=True)
+        deleted_files = []
+        for group_key, b_list in backups_by_group.items():
+            if len(b_list) > keep_count:
+                # Sort descending by mtime (newest first)
+                b_list.sort(key=lambda x: x["mtime"], reverse=True)
+                to_delete = b_list[keep_count:]
+                for item in to_delete:
+                    try:
+                        if os.path.exists(item["filepath"]):
+                            os.remove(item["filepath"])
+                            deleted_files.append(item["filename"])
+                    except Exception as e:
+                        print(f"Warning: Failed to delete old backup file {item['filepath']}: {e}")
 
-        deleted_keys = []
-        # Keep the top `keep_count` (e.g. 4); delete all older restored files
-        to_delete = restored_files[keep_count:]
-        for item in to_delete:
-            try:
-                # If currently active, safely dispose connection
-                if self.active_company_key == item["key"]:
-                    if self.engine:
-                        self.engine.dispose()
-                        self.engine = None
-                        self.SessionLocal = None
-                    self.active_company_key = None
-                    self.active_company_name = None
-                    self.active_db_path = None
-                    import gc
-                    gc.collect()
-
-                if os.path.exists(item["filepath"]):
-                    os.remove(item["filepath"])
-                    deleted_keys.append(item["key"])
-            except Exception as e:
-                print(f"Warning: Failed to delete old restored company file {item['filepath']}: {e}")
-
-        return deleted_keys
+        if deleted_files:
+            print(f"[CompanyManager] Backup retention policy enforced (keep last {keep_count}): deleted {len(deleted_files)} old backup(s).")
+        return deleted_files
 
     def delete_company(self, company_key: str) -> Dict[str, Any]:
         """
@@ -156,8 +277,8 @@ class CompanyManager:
         temp_engine.dispose()
 
     def list_companies(self) -> List[Dict[str, Any]]:
-        # Enforce retention policy: keep only the last 4 restored company files
-        self.prune_restored_companies(keep_count=4)
+        # Enforce retention policy: keep only the last 3 restored or duplicate company files
+        self.prune_companies(keep_count=3)
 
         companies = []
         for f in os.listdir(COMPANIES_DIR):
@@ -292,6 +413,7 @@ class CompanyManager:
     def auto_backup_on_close(self) -> Optional[Dict[str, Any]]:
         """
         Automatically creates a timestamped safety backup on company close / app exit.
+        Enforces retention policy: creates a new backup, deletes the oldest backup, and only keeps 3.
         """
         if not self.active_company_key or not self.active_db_path:
             return None
@@ -302,7 +424,14 @@ class CompanyManager:
         backup_filename = f"AUTO_BACKUP_{self.active_company_key}_{timestamp}.propbackup"
         backup_filepath = os.path.join(BACKUPS_DIR, backup_filename)
 
-        return self._create_backup_zip(self.active_company_key, self.active_db_path, backup_filepath, is_auto=True)
+        backup_info = self._create_backup_zip(self.active_company_key, self.active_db_path, backup_filepath, is_auto=True)
+
+        # Enforce retention policy: keep only the latest 3 backups, delete the rest
+        self.prune_backups(keep_count=3, company_key=self.active_company_key)
+        self.prune_backups(keep_count=3)
+        self.prune_companies(keep_count=3)
+
+        return backup_info
 
     def manual_backup(self, custom_name: Optional[str] = None) -> Dict[str, Any]:
         if not self.active_company_key or not self.active_db_path:
@@ -314,7 +443,9 @@ class CompanyManager:
         backup_filename = f"MANUAL_BACKUP_{safe_prefix}_{timestamp}.propbackup"
         backup_filepath = os.path.join(BACKUPS_DIR, backup_filename)
 
-        return self._create_backup_zip(self.active_company_key, self.active_db_path, backup_filepath, is_auto=False)
+        backup_info = self._create_backup_zip(self.active_company_key, self.active_db_path, backup_filepath, is_auto=False)
+        self.prune_backups(keep_count=3, company_key=self.active_company_key)
+        return backup_info
 
     def _create_backup_zip(self, company_key: str, db_path: str, backup_filepath: str, is_auto: bool) -> Dict[str, Any]:
         meta = {
@@ -362,8 +493,8 @@ class CompanyManager:
 
             # Open restored company
             opened = self.open_company(restore_key)
-            # Enforce retention policy: keep only the last 4 restored company files
-            self.prune_restored_companies(keep_count=4)
+            # Enforce retention policy: keep only the last 3 restored company files
+            self.prune_companies(keep_count=3)
             return {
                 "status": "RESTORED",
                 "message": f"Successfully restored company file as '{opened['name']}'",

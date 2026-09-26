@@ -134,13 +134,24 @@ export const api = {
     return res.json();
   },
 
-  async pruneRestoredCompanies(keep_count: number = 4): Promise<any> {
+  async pruneRestoredCompanies(keep_count: number = 3): Promise<any> {
     const res = await fetch(`${API_BASE}/system/companies/prune-restored?keep_count=${keep_count}`, {
       method: 'POST',
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to prune restored company files');
+      throw new Error(err.detail || 'Failed to prune old files and backups');
+    }
+    return res.json();
+  },
+
+  async pruneBackups(keep_count: number = 3): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/backups/prune?keep_count=${keep_count}`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to prune backups');
     }
     return res.json();
   },

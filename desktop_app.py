@@ -33,8 +33,14 @@ def on_closed():
         backup = company_manager.auto_backup_on_close()
         if backup:
             print(f"[PropBooks Desktop] Auto-backup saved: {backup['filename']}")
+        # Enforce retention policy: strictly keep last 3 backups and delete older ones
+        pruned_bkps = company_manager.prune_backups(keep_count=3)
+        pruned_comps = company_manager.prune_companies(keep_count=3)
+        print(f"[PropBooks Desktop] Backup retention enforced: kept last 3 backups, pruned {len(pruned_bkps)} old backups.")
+        if pruned_comps:
+            print(f"[PropBooks Desktop] Pruned {len(pruned_comps)} old company files.")
     except Exception as e:
-        print(f"[PropBooks Desktop] Error during auto-backup: {e}")
+        print(f"[PropBooks Desktop] Error during auto-backup / pruning on exit: {e}")
 
 def launch_dedicated_app_window():
     """Fallback: Launches Microsoft Edge or Chrome in app-window mode (standalone window, no tabs, no address bar)."""
