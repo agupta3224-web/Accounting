@@ -197,7 +197,8 @@ export interface EntityInterviewPayload {
   include_common_class?: boolean;
   common_class_name?: string;
   common_property_name?: string;
-  coa_mode?: 'DEFAULT' | 'CUSTOM';
+  coa_mode?: 'DEFAULT' | 'CUSTOM' | 'QUICKBOOKS';
+  quickbooks_accounts?: QuickBooksAccountItem[];
   entities?: EntityItemPayload[];
 
   entity_name?: string;
@@ -307,6 +308,57 @@ export interface CoaImportResult {
   imported_count: number;
   updated_count: number;
   errors: string[];
+  message: string;
+}
+
+export interface QuickBooksAccountItem {
+  account_number?: string | null;
+  name: string;
+  full_name: string;
+  level: number;
+  is_sub_account: boolean;
+  parent_account_number?: string | null;
+  parent_account_name?: string | null;
+  parent_full_name?: string | null;
+  type: string;
+  sub_type?: string | null;
+  qb_type?: string | null;
+  description?: string | null;
+  tax_line?: string | null;
+  balance_total: number;
+  opening_balance: number;
+  is_repair_category: boolean;
+  is_rental_income: boolean;
+  is_valid: boolean;
+  validation_error?: string | null;
+  auto_assigned_number?: boolean;
+}
+
+export interface QuickBooksCoaPreviewSummary {
+  total_accounts: number;
+  valid_accounts: number;
+  invalid_accounts: number;
+  sub_accounts_count: number;
+  total_assets_balance: number;
+  total_liabilities_balance: number;
+  total_equity_balance: number;
+  types_breakdown: Record<string, number>;
+}
+
+export interface QuickBooksCoaPreviewResult {
+  filename: string;
+  sheet_name: string;
+  accounts: QuickBooksAccountItem[];
+  summary: QuickBooksCoaPreviewSummary;
+}
+
+export interface QuickBooksImportResult {
+  success: boolean;
+  created_count: number;
+  updated_count: number;
+  total_processed: number;
+  sub_accounts_linked: number;
+  opening_balances_recorded: number;
   message: string;
 }
 

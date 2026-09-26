@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RefreshCw, FileCheck } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, AlertTriangle, ArrowRight, RefreshCw, FileCheck, Search } from 'lucide-react';
 import { api } from '../services/api';
-import { CoaImportResult } from '../types';
+import { CoaImportResult, QuickBooksCoaPreviewResult } from '../types';
 
 interface CoaImportModalProps {
   isOpen: boolean;
@@ -16,6 +16,8 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<string[][]>([]);
+  const [qbPreview, setQbPreview] = useState<QuickBooksCoaPreviewResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [rawText, setRawText] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -26,21 +28,57 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileSelect = (selectedFile: File) => {
+  const handleFileSelect = async (selectedFile: File) => {
     setError(null);
     setResult(null);
-    if (!selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.txt')) {
-      setError('Please upload a valid .csv file.');
+    setQbPreview(null);
+    setCsvPreview([]);
+
+    const name = selectedFile.name.toLowerCase();
+    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm');
+    const isCsv = name.endsWith('.csv') || name.endsWith('.txt') || name.endsWith('.tsv');
+
+    if (!isExcel && !isCsv) {
+      setError('Please upload a valid Excel file (.xlsx, .xls) or CSV export (.csv).');
       return;
     }
 
     setFile(selectedFile);
 
+    if (isExcel) {
+      setLoading(true);
+      try {
+        const qbRes = await api.previewQuickBooksCoa(selectedFile);
+        setQbPreview(qbRes);
+      } catch (err: any) {
+        setError(err.message || 'Failed to parse Excel file. Please ensure it is a valid Chart of Accounts export.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // CSV file reading
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const text = e.target?.result as string;
       setRawText(text);
-      parsePreview(text);
+
+      // Check if this CSV is a QuickBooks export format
+      const lower = text.toLowerCase();
+      if (lower.includes('balance total') || lower.includes('quickbooks') || lower.includes('accnt.') || lower.includes('\u00b7')) {
+        setLoading(true);
+        try {
+          const qbRes = await api.previewQuickBooksCoa(selectedFile);
+          setQbPreview(qbRes);
+        } catch {
+          parsePreview(text);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        parsePreview(text);
+      }
     };
     reader.readAsText(selectedFile);
   };
@@ -48,8 +86,6 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
   const parsePreview = (text: string) => {
     const lines = text.trim().split(/\r?\n/).slice(0, 8);
     const parsed = lines.map(line => {
-      // simple CSV splitter
-      const match = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
       return line.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
     });
     setCsvPreview(parsed);
@@ -64,8 +100,8 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
   };
 
   const handleImport = async () => {
-    if (!file && !rawText) {
-      setError('Please choose a CSV file to import.');
+    if (!file && !rawText && !qbPreview) {
+      setError('Please choose an Excel or CSV file to import.');
       return;
     }
 
@@ -74,7 +110,16 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
       setError(null);
       let res: CoaImportResult;
 
-      if (file) {
+      if (qbPreview) {
+        const importRes = await api.importQuickBooksCoa(qbPreview.accounts, false, true);
+        res = {
+          success: importRes.success,
+          imported_count: importRes.created_count,
+          updated_count: importRes.updated_count,
+          errors: [],
+          message: importRes.message
+        };
+      } else if (file) {
         res = await api.importAccountsCsv(file);
       } else {
         res = await api.importAccountsRawCsv(rawText);
@@ -180,47 +225,166 @@ export const CoaImportModal: React.FC<CoaImportModalProps> = ({
           )}
 
           {/* Dropzone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2.5 ${
-              isDragOver
-                ? 'border-cyan-500 bg-cyan-950/20'
-                : file
-                ? 'border-emerald-500/60 bg-emerald-950/10'
-                : 'border-slate-700 hover:border-slate-600 bg-slate-800/30'
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.txt"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  handleFileSelect(e.target.files[0]);
-                }
-              }}
-            />
+          {!qbPreview ? (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2.5 ${
+                isDragOver
+                  ? 'border-cyan-500 bg-cyan-950/20'
+                  : file
+                  ? 'border-emerald-500/60 bg-emerald-950/10'
+                  : 'border-slate-700 hover:border-slate-600 bg-slate-800/30'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv,.txt,.tsv"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                  }
+                }}
+              />
 
-            <div className="p-3 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-              {file ? <FileCheck className="w-6 h-6 text-emerald-400" /> : <Upload className="w-6 h-6 text-cyan-400" />}
+              <div className="p-3 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                {loading ? (
+                  <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+                ) : file ? (
+                  <FileCheck className="w-6 h-6 text-emerald-400" />
+                ) : (
+                  <Upload className="w-6 h-6 text-cyan-400" />
+                )}
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {file ? file.name : 'Click to upload or drag & drop QuickBooks Excel / CSV'}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {file ? `${(file.size / 1024).toFixed(1)} KB` : 'Supports QuickBooks Desktop/Online Excel exports (.xlsx, .xls) and standard CSV files'}
+                </p>
+              </div>
             </div>
+          ) : (
+            <div className="space-y-4">
+              {/* QuickBooks Preview Card */}
+              <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
+                    <div>
+                      <span className="font-bold text-sm text-white">{qbPreview.filename}</span>
+                      <span className="text-[11px] text-slate-400 block">Sheet: {qbPreview.sheet_name}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setFile(null); setQbPreview(null); }}
+                    className="px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition cursor-pointer"
+                  >
+                    Change File
+                  </button>
+                </div>
 
-            <div>
-              <p className="text-sm font-semibold text-white">
-                {file ? file.name : 'Click to upload or drag & drop CSV'}
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {file ? `${(file.size / 1024).toFixed(1)} KB` : 'Supports standard accounting headers (Account #, Name, Type, Sub-Type, Description)'}
-              </p>
+                {/* Summary Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">Accounts</div>
+                    <div className="text-base font-bold text-white">{qbPreview.summary.total_accounts}</div>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-indigo-400 uppercase font-semibold">Sub-Accounts</div>
+                    <div className="text-base font-bold text-indigo-300">{qbPreview.summary.sub_accounts_count}</div>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-emerald-400 uppercase font-semibold">Assets</div>
+                    <div className="text-xs font-bold text-emerald-300 font-mono">
+                      ${qbPreview.summary.total_assets_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                    <div className="text-[10px] text-amber-400 uppercase font-semibold">Liabilities</div>
+                    <div className="text-xs font-bold text-amber-300 font-mono">
+                      ${qbPreview.summary.total_liabilities_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search accounts..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Table */}
+                <div className="max-h-52 overflow-y-auto border border-slate-700/80 rounded-xl text-xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-900 text-slate-400 sticky top-0 font-semibold border-b border-slate-700">
+                      <tr>
+                        <th className="py-2 px-3">Acct #</th>
+                        <th className="py-2 px-3">Name & Hierarchy</th>
+                        <th className="py-2 px-3">Type</th>
+                        <th className="py-2 px-3 text-right">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 font-sans">
+                      {qbPreview.accounts
+                        .filter(a => {
+                          if (!searchQuery.trim()) return true;
+                          const q = searchQuery.toLowerCase();
+                          return (
+                            (a.account_number && a.account_number.toLowerCase().includes(q)) ||
+                            a.name.toLowerCase().includes(q) ||
+                            (a.parent_account_name && a.parent_account_name.toLowerCase().includes(q)) ||
+                            a.type.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((a, idx) => (
+                          <tr key={idx} className="hover:bg-slate-800/50 transition">
+                            <td className="py-1.5 px-3 font-mono text-[11px] text-cyan-300">
+                              {a.account_number || 'Auto'}
+                            </td>
+                            <td className="py-1.5 px-3">
+                              <div
+                                style={{ paddingLeft: `${Math.min(a.level * 14, 42)}px` }}
+                                className="flex items-center space-x-1"
+                              >
+                                {a.level > 0 && <span className="text-cyan-400 text-xs">↳</span>}
+                                <span className={a.level > 0 ? 'text-slate-200' : 'text-white font-medium'}>
+                                  {a.name}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-3">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/80 text-slate-300 font-semibold">
+                                {a.type}
+                              </span>
+                            </td>
+                            <td className="py-1.5 px-3 text-right font-mono text-[11px] text-slate-300">
+                              {a.balance_total !== 0 ? `$${a.balance_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* CSV Quick Preview */}
-          {csvPreview.length > 0 && (
+          {/* Standard CSV Quick Preview */}
+          {csvPreview.length > 0 && !qbPreview && (
             <div>
               <span className="text-xs font-bold text-slate-300 block mb-2">CSV Data Preview (First few rows):</span>
               <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-x-auto max-h-48 text-[11px] font-mono">

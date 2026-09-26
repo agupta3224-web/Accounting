@@ -23,9 +23,22 @@ import {
   Plus,
   Trash2,
   ListPlus,
-  DollarSign
+  DollarSign,
+  FileSpreadsheet,
+  Upload,
+  Search,
+  RefreshCw
 } from 'lucide-react';
-import { Company, EntityInterviewPayload, EntityItemPayload, PropertyItemPayload, ApartmentUnitItem, US_STATES } from '../../types';
+import { 
+  Company, 
+  EntityInterviewPayload, 
+  EntityItemPayload, 
+  PropertyItemPayload, 
+  ApartmentUnitItem, 
+  US_STATES,
+  QuickBooksCoaPreviewResult,
+  QuickBooksAccountItem
+} from '../../types';
 import { api } from '../../services/api';
 
 interface EntitySetupWizardModalProps {
@@ -52,7 +65,34 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
   const [portfolioEin, setPortfolioEin] = useState<string>('');
   const [portfolioNotes, setPortfolioNotes] = useState<string>('');
   const [selectedExistingCompId, setSelectedExistingCompId] = useState<number | ''>('');
-  const [coaMode, setCoaMode] = useState<'DEFAULT' | 'CUSTOM'>('DEFAULT');
+  const [coaMode, setCoaMode] = useState<'DEFAULT' | 'CUSTOM' | 'QUICKBOOKS'>('DEFAULT');
+  const [qbFile, setQbFile] = useState<File | null>(null);
+  const [qbLoading, setQbLoading] = useState<boolean>(false);
+  const [qbError, setQbError] = useState<string | null>(null);
+  const [qbPreview, setQbPreview] = useState<QuickBooksCoaPreviewResult | null>(null);
+  const [qbSearchQuery, setQbSearchQuery] = useState<string>('');
+  const [qbIsDragOver, setQbIsDragOver] = useState<boolean>(false);
+
+  const handleQbFileSelect = async (selectedFile: File) => {
+    setQbError(null);
+    const fname = selectedFile.name.toLowerCase();
+    if (!fname.endsWith('.xlsx') && !fname.endsWith('.xls') && !fname.endsWith('.csv') && !fname.endsWith('.txt')) {
+      setQbError('Please upload a valid Excel file (.xlsx, .xls) or CSV export (.csv) from QuickBooks.');
+      return;
+    }
+    setQbFile(selectedFile);
+    setQbLoading(true);
+    try {
+      const res = await api.previewQuickBooksCoa(selectedFile);
+      setQbPreview(res);
+      setCoaMode('QUICKBOOKS');
+    } catch (err: any) {
+      setQbError(err.message || 'Failed to read QuickBooks export file. Please check file format.');
+      setQbPreview(null);
+    } finally {
+      setQbLoading(false);
+    }
+  };
 
   // Common Portfolio / Company Expense Class (Common to all)
   const [includeCommonClass, setIncludeCommonClass] = useState<boolean>(true);
@@ -158,6 +198,10 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
     }
     if (hasMultipleLLCs && !portfolioName.trim() && !selectedExistingCompId) {
       setErrorMsg('Please specify your Portfolio File name.');
+      return;
+    }
+    if (coaMode === 'QUICKBOOKS' && !qbPreview) {
+      setErrorMsg('Please upload your QuickBooks Excel or CSV file to import, or choose another Chart of Accounts option.');
       return;
     }
     setErrorMsg(null);
@@ -490,6 +534,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
         common_class_name: includeCommonClass ? (commonClassName.trim() || 'Portfolio / Company Expense') : undefined,
         common_property_name: includeCommonClass ? (commonPropertyName.trim() || 'Portfolio / Company Overhead') : undefined,
         coa_mode: coaMode,
+        quickbooks_accounts: coaMode === 'QUICKBOOKS' && qbPreview ? qbPreview.accounts : undefined,
         entities: finalEntities,
 
         entity_name: primaryEntity ? primaryEntity.entity_name : entityName.trim(),
@@ -756,7 +801,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                 <p className="text-xs text-slate-600">
                   Select whether you want to use our default real estate chart of accounts, or start with your own custom base structure:
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
                   <div
                     onClick={() => setCoaMode('DEFAULT')}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between space-y-2 ${
@@ -778,7 +823,7 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                     onClick={() => setCoaMode('CUSTOM')}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between space-y-2 ${
                       coaMode === 'CUSTOM'
-                        ? 'border-emerald-600 bg-white ring-2 ring-emerald-500/20 shadow-xs'
+                        ? 'border-purple-600 bg-white ring-2 ring-purple-500/20 shadow-xs'
                         : 'border-slate-200 bg-white/70 hover:border-slate-300'
                     }`}
                   >
@@ -790,7 +835,263 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                       Starts with your 8 clean foundational accounts: 10000 Assets, 20000 Liabilities, 30000 Equity, 40000 Revenue, 50000 Flips, 60000/70000 OpEx, 80000 Other.
                     </p>
                   </div>
+
+                  <div
+                    onClick={() => setCoaMode('QUICKBOOKS')}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between space-y-2 ${
+                      coaMode === 'QUICKBOOKS'
+                        ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-xs'
+                        : 'border-slate-200 bg-white/70 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-extrabold text-slate-900 text-xs">Import from QuickBooks</div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">Excel / CSV</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Upload your QuickBooks Desktop or Online Chart of Accounts export. We detect sub-accounts, categories, and opening balances.
+                    </p>
+                  </div>
                 </div>
+
+                {/* QuickBooks Import Dropzone & Live Preview */}
+                {coaMode === 'QUICKBOOKS' && (
+                  <div className="mt-4 pt-3 border-t border-slate-200 space-y-3">
+                    {!qbPreview ? (
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setQbIsDragOver(true); }}
+                        onDragLeave={() => setQbIsDragOver(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setQbIsDragOver(false);
+                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            handleQbFileSelect(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        className={`border-2 border-dashed rounded-2xl p-6 text-center transition flex flex-col items-center justify-center space-y-3 ${
+                          qbIsDragOver
+                            ? 'border-blue-500 bg-blue-50/70 scale-[1.01]'
+                            : 'border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 shadow-xs">
+                          {qbLoading ? (
+                            <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+                          ) : (
+                            <FileSpreadsheet className="w-8 h-8 text-blue-600" />
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <h5 className="text-sm font-bold text-slate-900">
+                            {qbLoading ? 'Analyzing QuickBooks Export...' : 'Upload QuickBooks Chart of Accounts File'}
+                          </h5>
+                          <p className="text-xs text-slate-500 max-w-md mx-auto">
+                            Drag and drop your exported Excel file (<strong>.xlsx</strong>, <strong>.xls</strong>) or <strong>.csv</strong> here, or browse files on your computer.
+                          </p>
+                        </div>
+
+                        {qbError && (
+                          <div className="w-full max-w-md p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center space-x-2 text-left">
+                            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                            <span>{qbError}</span>
+                          </div>
+                        )}
+
+                        <div className="pt-1">
+                          <label className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition">
+                            <Upload className="w-4 h-4" />
+                            <span>Select QuickBooks File</span>
+                            <input
+                              type="file"
+                              accept=".xlsx,.xls,.csv,.tsv,.txt"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  handleQbFileSelect(e.target.files[0]);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+
+                        <div className="text-[11px] text-slate-400 pt-1">
+                          Tip: In QuickBooks Desktop, open <em>Lists &gt; Chart of Accounts</em>, right-click and choose <em>Export to Excel</em> or <em>Print &gt; File</em>.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs space-y-4 p-4">
+                        {/* Preview Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+                              <FileSpreadsheet className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <h5 className="font-extrabold text-sm text-slate-900">{qbPreview.filename}</h5>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                                  {qbPreview.sheet_name}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                QuickBooks Chart of Accounts parsed successfully
+                              </p>
+                            </div>
+                          </div>
+
+                          <label className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg cursor-pointer transition">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Replace File</span>
+                            <input
+                              type="file"
+                              accept=".xlsx,.xls,.csv,.tsv,.txt"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  handleQbFileSelect(e.target.files[0]);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+
+                        {/* Summary Badges Bar */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase">Total Accounts</div>
+                            <div className="text-base font-black text-slate-900">{qbPreview.summary.total_accounts}</div>
+                          </div>
+                          <div className="p-2.5 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                            <div className="text-[10px] font-bold text-indigo-500 uppercase">Sub-Accounts</div>
+                            <div className="text-base font-black text-indigo-900">{qbPreview.summary.sub_accounts_count}</div>
+                          </div>
+                          <div className="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                            <div className="text-[10px] font-bold text-emerald-600 uppercase">Assets Total</div>
+                            <div className="text-sm font-black text-emerald-900">
+                              ${qbPreview.summary.total_assets_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                          <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-100">
+                            <div className="text-[10px] font-bold text-amber-600 uppercase">Liabilities Total</div>
+                            <div className="text-sm font-black text-amber-900">
+                              ${qbPreview.summary.total_liabilities_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                          <div className="p-2.5 bg-purple-50/60 rounded-xl border border-purple-100">
+                            <div className="text-[10px] font-bold text-purple-600 uppercase">Equity Total</div>
+                            <div className="text-sm font-black text-purple-900">
+                              ${qbPreview.summary.total_equity_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Search and Table */}
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                            <input
+                              type="text"
+                              value={qbSearchQuery}
+                              onChange={(e) => setQbSearchQuery(e.target.value)}
+                              placeholder="Search imported accounts by number, name, or parent..."
+                              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+
+                          <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead className="bg-slate-100 text-slate-600 sticky top-0 font-bold border-b border-slate-200 z-10">
+                                <tr>
+                                  <th className="py-2 px-3">Account #</th>
+                                  <th className="py-2 px-3">Account Name &amp; Hierarchy</th>
+                                  <th className="py-2 px-3">Category Type</th>
+                                  <th className="py-2 px-3">Detail Sub-Type</th>
+                                  <th className="py-2 px-3 text-right">Balance Total</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {qbPreview.accounts
+                                  .filter(a => {
+                                    if (!qbSearchQuery.trim()) return true;
+                                    const q = qbSearchQuery.toLowerCase();
+                                    return (
+                                      (a.account_number && a.account_number.toLowerCase().includes(q)) ||
+                                      a.name.toLowerCase().includes(q) ||
+                                      (a.parent_account_name && a.parent_account_name.toLowerCase().includes(q)) ||
+                                      a.type.toLowerCase().includes(q) ||
+                                      (a.sub_type && a.sub_type.toLowerCase().includes(q))
+                                    );
+                                  })
+                                  .map((a, idx) => (
+                                    <tr key={idx} className="hover:bg-slate-50/80 transition">
+                                      <td className="py-1.5 px-3 font-mono text-[11px] font-bold text-slate-700">
+                                        {a.account_number || <span className="text-slate-400 italic">Auto</span>}
+                                      </td>
+                                      <td className="py-1.5 px-3">
+                                        <div
+                                          style={{ paddingLeft: `${Math.min(a.level * 16, 48)}px` }}
+                                          className="flex items-center space-x-1.5"
+                                        >
+                                          {a.level > 0 && (
+                                            <span className="text-indigo-400 font-bold text-xs select-none">↳</span>
+                                          )}
+                                          <span className={`font-semibold text-slate-900 ${a.level > 0 ? 'text-indigo-950' : ''}`}>
+                                            {a.name}
+                                          </span>
+                                          {a.level > 0 && a.parent_account_name && (
+                                            <span className="text-[10px] text-slate-400">
+                                              (sub-account of {a.parent_account_name})
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="py-1.5 px-3">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                          a.type === 'ASSET'
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : a.type === 'LIABILITY'
+                                            ? 'bg-amber-100 text-amber-800'
+                                            : a.type === 'EQUITY'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : a.type === 'INCOME'
+                                            ? 'bg-cyan-100 text-cyan-800'
+                                            : 'bg-rose-100 text-rose-800'
+                                        }`}>
+                                          {a.type}
+                                        </span>
+                                      </td>
+                                      <td className="py-1.5 px-3 text-[11px] text-slate-600">
+                                        {a.sub_type || a.qb_type || 'General'}
+                                      </td>
+                                      <td className="py-1.5 px-3 text-right font-mono text-[11px] font-semibold">
+                                        {a.balance_total !== 0 ? (
+                                          <span className={a.balance_total < 0 ? 'text-rose-600' : 'text-slate-900'}>
+                                            ${a.balance_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-400">$0.00</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>
+                              <strong>{qbPreview.summary.valid_accounts} accounts mapped</strong> ({qbPreview.summary.sub_accounts_count} hierarchical sub-accounts). These will be created when setup finishes.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Common Portfolio / Company Expense Class (Common to all) */}
@@ -2054,11 +2355,30 @@ export const EntitySetupWizardModal: React.FC<EntitySetupWizardModalProps> = ({
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chart of Accounts Mode</span>
                           <span className="font-black text-sm text-slate-900">
-                            {coaMode === 'CUSTOM' ? 'Custom 8-Base Account System (10000 - 80000)' : 'Standard Real Estate Chart of Accounts'}
+                            {coaMode === 'QUICKBOOKS'
+                              ? `Import from QuickBooks (${qbPreview?.summary.total_accounts || 0} accounts)`
+                              : coaMode === 'CUSTOM'
+                              ? 'Custom 8-Base Account System (10000 - 80000)'
+                              : 'Standard Real Estate Chart of Accounts'}
                           </span>
+                          {coaMode === 'QUICKBOOKS' && qbPreview && (
+                            <span className="text-[11px] text-slate-500 block mt-0.5">
+                              File: <strong>{qbPreview.filename}</strong> &bull; {qbPreview.summary.sub_accounts_count} sub-accounts &bull; {qbPreview.summary.valid_accounts} accounts mapped
+                            </span>
+                          )}
                         </div>
-                        <span className={`px-2.5 py-1 rounded-md font-bold text-[10px] ${coaMode === 'CUSTOM' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                          {coaMode === 'CUSTOM' ? '8 Foundation Accounts' : 'Full 35+ Preset'}
+                        <span className={`px-2.5 py-1 rounded-md font-bold text-[10px] ${
+                          coaMode === 'QUICKBOOKS'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : coaMode === 'CUSTOM'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {coaMode === 'QUICKBOOKS'
+                            ? `${qbPreview?.summary.total_accounts || 0} Accounts`
+                            : coaMode === 'CUSTOM'
+                            ? '8 Foundation Accounts'
+                            : 'Full 35+ Preset'}
                         </span>
                       </div>
 

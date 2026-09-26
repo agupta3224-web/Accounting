@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,7 +57,9 @@ from .coa_engine import (
     backfill_standard_account_numbers,
     normalize_account_type,
     CUSTOM_BASE_COA_SEED,
-    seed_custom_base_accounts
+    seed_custom_base_accounts,
+    parse_quickbooks_coa_file,
+    import_quickbooks_coa_to_db
 )
 from .printer_engine import get_system_printers, render_printable_pnl_html
 
@@ -174,7 +176,8 @@ class EntityInterviewPayload(BaseModel):
     common_property_name: Optional[str] = "Portfolio / Company Overhead"
 
     # Chart of Accounts Choice
-    coa_mode: Optional[str] = "DEFAULT"  # "DEFAULT" or "CUSTOM"
+    coa_mode: Optional[str] = "DEFAULT"  # "DEFAULT", "CUSTOM", or "QUICKBOOKS"
+    quickbooks_accounts: Optional[List[Dict[str, Any]]] = None
 
     # Multi-Entity support
     entities: Optional[List[EntityItemPayload]] = []
@@ -242,6 +245,11 @@ class AccountCreate(BaseModel):
     parent_account_id: Optional[int] = None
     opening_balance: Optional[float] = 0.0
     opening_balance_date: Optional[str] = None
+
+class QuickBooksImportRequest(BaseModel):
+    accounts: List[Dict[str, Any]]
+    overwrite: Optional[bool] = False
+    create_opening_balances: Optional[bool] = True
 
 
 class JournalEntryLinePayload(BaseModel):
@@ -600,9 +608,11 @@ def create_class(c_in: ClassCreate, db: Session = Depends(get_db)):
 
 # --- Entity Setup Interview Wizard Endpoint ---
 def _persist_entity_interview_records(payload: EntityInterviewPayload, db: Session) -> Dict[str, Any]:
-    # 0. Initialize Chart of Accounts if custom mode requested
+    # 0. Initialize Chart of Accounts if custom mode or QuickBooks import requested
     if payload.coa_mode and payload.coa_mode.upper() == "CUSTOM":
         seed_custom_base_accounts(db, overwrite=True)
+    elif payload.coa_mode and payload.coa_mode.upper() in ["QUICKBOOKS", "IMPORT"] and payload.quickbooks_accounts:
+        import_quickbooks_coa_to_db(payload.quickbooks_accounts, db, overwrite=True)
 
     # 1. Resolve Company / Portfolio
     target_company_id = payload.company_id
@@ -1283,16 +1293,88 @@ async def import_accounts_csv_endpoint(
     db: Session = Depends(get_db)
 ):
     try:
-        csv_text = ""
         if file:
             content_bytes = await file.read()
+            fname = (file.filename or "").lower()
+            # If Excel file or zip header, route directly to QuickBooks / Excel engine
+            if fname.endswith((".xlsx", ".xls", ".xlsm")) or (len(content_bytes) > 4 and content_bytes[:4] == b"PK\x03\x04"):
+                parsed = parse_quickbooks_coa_file(content_bytes, file.filename or "export.xlsx")
+                return import_quickbooks_coa_to_db(parsed["accounts"], db, overwrite=False)
+
             csv_text = content_bytes.decode("utf-8-sig", errors="ignore")
+            # If QuickBooks Desktop CSV export
+            if "balance total" in csv_text.lower() or "quickbooks" in csv_text.lower() or "accnt" in csv_text.lower():
+                parsed = parse_quickbooks_coa_file(content_bytes, file.filename or "export.csv")
+                return import_quickbooks_coa_to_db(parsed["accounts"], db, overwrite=False)
         elif raw_csv:
             csv_text = raw_csv
         else:
-            raise HTTPException(status_code=400, detail="No CSV file or CSV text was provided.")
-            
+            raise HTTPException(status_code=400, detail="No CSV or Excel file was provided.")
+
         result = import_accounts_from_csv(csv_text, db)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/coa/quickbooks/preview")
+async def preview_quickbooks_coa_endpoint(file: UploadFile = File(...)):
+    """
+    Parses a QuickBooks Chart of Accounts Excel (.xlsx/.xls) or CSV export and
+    returns a detailed preview with accounts list and validation/summary statistics.
+    """
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+        preview_data = parse_quickbooks_coa_file(content, file.filename or "QuickBooks_Export.xlsx")
+        return preview_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/coa/quickbooks/import")
+def import_quickbooks_coa_endpoint(
+    req: QuickBooksImportRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Imports pre-parsed QuickBooks accounts into the database, creating hierarchical
+    sub-account relationships and double-entry opening balances.
+    """
+    try:
+        if not req.accounts:
+            raise HTTPException(status_code=400, detail="No accounts provided to import.")
+        result = import_quickbooks_coa_to_db(
+            accounts=req.accounts,
+            db=db,
+            overwrite=req.overwrite,
+            create_opening_balances=req.create_opening_balances
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/coa/quickbooks/import-file")
+async def import_quickbooks_coa_file_endpoint(
+    file: UploadFile = File(...),
+    overwrite: bool = Form(False),
+    create_opening_balances: bool = Form(True),
+    db: Session = Depends(get_db)
+):
+    """
+    Directly uploads, parses, and imports a QuickBooks Excel/CSV file into the database.
+    """
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+        parsed = parse_quickbooks_coa_file(content, file.filename or "QuickBooks_Export.xlsx")
+        result = import_quickbooks_coa_to_db(
+            accounts=parsed["accounts"],
+            db=db,
+            overwrite=overwrite,
+            create_opening_balances=create_opening_balances
+        )
+        result["preview_summary"] = parsed["summary"]
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

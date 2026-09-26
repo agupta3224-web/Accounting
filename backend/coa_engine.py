@@ -1,7 +1,9 @@
 import io
 import csv
 import re
+from datetime import datetime, date
 from typing import Dict, Any, List, Optional, Tuple
+import openpyxl
 from sqlalchemy.orm import Session
 from .models import Category
 
@@ -585,3 +587,487 @@ def backfill_standard_account_numbers(db: Session):
             existing_names.add(s['name'].lower().strip())
             
     db.commit()
+
+
+def map_quickbooks_account_type(qb_type: str, name: str = "", num: str = "") -> Tuple[str, str, bool, bool]:
+    """
+    Maps QuickBooks account types to PropBooks category types and sub-types.
+    Returns: (type, sub_type, is_repair_category, is_rental_income)
+    """
+    qb = (qb_type or "").strip().lower()
+    name_low = (name or "").lower()
+
+    is_repair = "repair" in name_low or "maintenance" in name_low or "pest" in name_low
+    is_rental = "rental" in name_low or "tenant rent" in name_low or ("rent" in name_low and "interest" not in name_low and "parent" not in name_low)
+
+    if "bank" in qb:
+        return "ASSET", "Bank Accounts", False, False
+    elif "receivable" in qb:
+        return "ASSET", "Accounts Receivable", False, False
+    elif "other current asset" in qb or "current asset" in qb:
+        return "ASSET", "Other Current Assets", False, False
+    elif "fixed asset" in qb:
+        if "depreciation" in name_low or "accum" in name_low:
+            return "ASSET", "Contra Asset", False, False
+        elif "land" in name_low:
+            return "ASSET", "Land", False, False
+        elif "building" in name_low:
+            return "ASSET", "Buildings & Improvements", False, False
+        return "ASSET", "Fixed Assets", False, False
+    elif "other asset" in qb:
+        return "ASSET", "Other Assets", False, False
+    elif "payable" in qb:
+        return "LIABILITY", "Accounts Payable", False, False
+    elif "credit card" in qb:
+        return "LIABILITY", "Credit Cards", False, False
+    elif "other current liability" in qb or "current liability" in qb:
+        if "deposit" in name_low or "security" in name_low:
+            return "LIABILITY", "Tenant Deposits", False, False
+        elif "loan" in name_low or "note" in name_low:
+            return "LIABILITY", "Short Term Loans", False, False
+        elif "tax" in name_low:
+            return "LIABILITY", "Accrued Taxes", False, False
+        return "LIABILITY", "Other Current Liabilities", False, False
+    elif "long term liability" in qb:
+        if "mortgage" in name_low or "loan" in name_low or "note" in name_low:
+            return "LIABILITY", "Mortgages & Notes Payable", False, False
+        return "LIABILITY", "Long Term Liabilities", False, False
+    elif "equity" in qb:
+        if "draw" in name_low or "distribution" in name_low:
+            return "EQUITY", "Equity Draws", False, False
+        elif "retained" in name_low:
+            return "EQUITY", "Retained Earnings", False, False
+        elif "opening" in name_low:
+            return "EQUITY", "Opening Balance Equity", False, False
+        return "EQUITY", "Owner's Equity", False, False
+    elif "income" in qb or "revenue" in qb:
+        if "other" in qb:
+            return "OTHER_INCOME_EXPENSE", "Other Income", False, False
+        if is_rental or "rent" in name_low:
+            return "INCOME", "Rental Revenue", False, True
+        elif "late" in name_low or "fee" in name_low:
+            return "INCOME", "Fee Income", False, False
+        elif "laundry" in name_low or "parking" in name_low:
+            return "INCOME", "Ancillary Revenue", False, False
+        return "INCOME", "Operating Revenue", False, False
+    elif "cost of goods" in qb or "cogs" in qb:
+        return "COGS", "Direct Turnover Costs", False, False
+    elif "expense" in qb:
+        if "other" in qb or "non" in qb:
+            return "OTHER_INCOME_EXPENSE", "Other Expense", False, False
+        if is_repair:
+            return "OPERATING_EXPENSE", "Maintenance", True, False
+        elif "utilit" in name_low:
+            return "OPERATING_EXPENSE", "Utilities", False, False
+        elif "tax" in name_low:
+            return "OPERATING_EXPENSE", "Taxes", False, False
+        elif "insur" in name_low:
+            return "OPERATING_EXPENSE", "Insurance", False, False
+        elif any(k in name_low for k in ["phone", "tele", "internet", "wifi"]):
+            return "OPERATING_EXPENSE", "Utilities", False, False
+        elif any(k in name_low for k in ["fee", "bank", "merchant"]):
+            return "OPERATING_EXPENSE", "Bank Fees", False, False
+        elif any(k in name_low for k in ["legal", "prof", "account"]):
+            return "OPERATING_EXPENSE", "Professional Services", False, False
+        elif "manage" in name_low:
+            return "OPERATING_EXPENSE", "Management", False, False
+        elif any(k in name_low for k in ["landscap", "snow", "ground"]):
+            return "OPERATING_EXPENSE", "Grounds Maintenance", False, False
+        elif any(k in name_low for k in ["hoa", "association"]):
+            return "OPERATING_EXPENSE", "Association Fees", False, False
+        elif any(k in name_low for k in ["advertis", "market", "leasing"]):
+            return "OPERATING_EXPENSE", "Marketing", False, False
+        return "OPERATING_EXPENSE", "Operating Expenses", False, False
+
+    # Fallback to inference from account number if available
+    inferred = infer_account_type_from_number(num)
+    return inferred, "General", is_repair, is_rental
+
+
+def parse_quickbooks_coa_file(file_bytes: bytes, filename: str) -> Dict[str, Any]:
+    """
+    Parses a QuickBooks Chart of Accounts exported as Excel (.xlsx/.xls) or CSV (.csv/.tsv/.txt).
+    Features:
+    - Auto-detects data worksheet (skipping tip sheets)
+    - Dynamic column matching ('Account', 'Type', 'Balance Total', 'Description', 'Accnt. #', 'Tax Line')
+    - Colon-delimited hierarchical sub-account extraction (e.g. 28000 · Credit Cards:28110 · Chase Sapphire)
+    - Middle-dot / bullet / whitespace stripping
+    - Auto-assigned logical 5-digit account numbers if numbers are omitted
+    - Full summary metrics calculation for live UI preview
+    """
+    is_excel = filename.lower().endswith((".xlsx", ".xlsm", ".xltx", ".xls")) or (len(file_bytes) > 4 and file_bytes[:4] == b"PK\x03\x04")
+    raw_grid: List[List[Any]] = []
+    selected_sheet_name = "Sheet1"
+
+    if is_excel:
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+        target_ws = None
+        # Priority 1: Non-tip worksheet with Account and Type in header rows
+        for sname in wb.sheetnames:
+            if any(skip in sname.lower() for skip in ["tip", "instruction", "guide", "readme"]):
+                continue
+            ws = wb[sname]
+            for r in range(1, min(16, ws.max_row + 1)):
+                row_texts = [str(ws.cell(r, c).value or "").strip().lower() for c in range(1, min(25, ws.max_column + 1))]
+                if any("account" in t and "receivable" not in t and "payable" not in t for t in row_texts) and any(t == "type" or "type" in t for t in row_texts):
+                    target_ws = ws
+                    selected_sheet_name = sname
+                    break
+            if target_ws:
+                break
+
+        if not target_ws:
+            # Fallback: first non-tip sheet, or active sheet
+            for sname in wb.sheetnames:
+                if not any(skip in sname.lower() for skip in ["tip", "instruction", "guide"]):
+                    target_ws = wb[sname]
+                    selected_sheet_name = sname
+                    break
+            if not target_ws:
+                target_ws = wb.active
+                selected_sheet_name = target_ws.title
+
+        for r in range(1, target_ws.max_row + 1):
+            row_vals = [target_ws.cell(r, c).value for c in range(1, target_ws.max_column + 1)]
+            raw_grid.append(row_vals)
+    else:
+        # CSV / TSV format
+        text = ""
+        for enc in ["utf-8-sig", "utf-8", "cp1252", "latin1"]:
+            try:
+                text = file_bytes.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        if not text:
+            text = file_bytes.decode("utf-8", errors="ignore")
+
+        first_line = text.splitlines()[0] if text.splitlines() else ""
+        delimiter = "\t" if "\t" in first_line else ","
+        reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+        raw_grid = [row for row in reader]
+        selected_sheet_name = "CSV Export"
+
+    if not raw_grid:
+        raise ValueError("The uploaded QuickBooks export file contains no data.")
+
+    # Locate header row dynamically
+    header_row_idx = -1
+    col_map: Dict[str, int] = {}
+    for r_idx, row in enumerate(raw_grid[:20]):
+        row_clean = [str(cell or "").strip().lower().replace("#", "number").replace(".", "").replace(" ", "_") for cell in row]
+        temp_col: Dict[str, int] = {}
+        for c_idx, val in enumerate(row_clean):
+            if ("account" in val or "category" in val or "acct" in val) and ("receivable" not in val and "payable" not in val and "number" not in val) and "account" not in temp_col:
+                temp_col["account"] = c_idx
+            elif (val == "type" or val == "acct_type" or val == "account_type") and "type" not in temp_col:
+                temp_col["type"] = c_idx
+            elif ("balance" in val or "bal" in val or "total" in val) and "balance" not in temp_col:
+                temp_col["balance"] = c_idx
+            elif ("desc" in val or "memo" in val or "notes" in val) and "description" not in temp_col:
+                temp_col["description"] = c_idx
+            elif ("accnt_number" in val or "acct_number" in val or "account_number" in val or val == "accnt_number" or val == "number") and "accnt_number" not in temp_col:
+                temp_col["accnt_number"] = c_idx
+            elif ("tax" in val or "tax_line" in val) and "tax_line" not in temp_col:
+                temp_col["tax_line"] = c_idx
+
+        if "account" in temp_col and "type" in temp_col:
+            header_row_idx = r_idx
+            col_map = temp_col
+            break
+
+    if header_row_idx == -1:
+        # Default fallback
+        header_row_idx = 0
+        col_map = {"account": 0, "type": 1, "balance": 2, "description": 3, "accnt_number": 4}
+
+    accounts: List[Dict[str, Any]] = []
+    total_assets = 0.0
+    total_liabilities = 0.0
+    total_equity = 0.0
+    type_counts: Dict[str, int] = {}
+
+    for row_idx in range(header_row_idx + 1, len(raw_grid)):
+        row = raw_grid[row_idx]
+        if not row or not any(row):
+            continue
+
+        raw_acct_val = row[col_map["account"]] if "account" in col_map and col_map["account"] < len(row) else None
+        raw_acct = str(raw_acct_val or "").strip()
+
+        # Filter out invalid, total, or header duplicate rows
+        if not raw_acct or raw_acct.lower() in ["none", "#n/a", "nan", "total", "account", "type", "<unassigned>"]:
+            continue
+
+        raw_type = str(row[col_map["type"]] or "").strip() if "type" in col_map and col_map["type"] < len(row) else ""
+        raw_bal_val = row[col_map["balance"]] if "balance" in col_map and col_map["balance"] < len(row) else 0.0
+        raw_desc = str(row[col_map["description"]] or "").strip() if "description" in col_map and col_map["description"] < len(row) else ""
+        raw_num_val = row[col_map["accnt_number"]] if "accnt_number" in col_map and col_map["accnt_number"] < len(row) else None
+        raw_tax = str(row[col_map["tax_line"]] or "").strip() if "tax_line" in col_map and col_map["tax_line"] < len(row) else ""
+
+        # Parse balance
+        bal_num = 0.0
+        if raw_bal_val is not None:
+            if isinstance(raw_bal_val, (int, float)):
+                bal_num = float(raw_bal_val)
+            else:
+                clean_bal_str = str(raw_bal_val).replace("$", "").replace(",", "").strip()
+                if clean_bal_str.startswith("(") and clean_bal_str.endswith(")"):
+                    clean_bal_str = "-" + clean_bal_str[1:-1]
+                try:
+                    bal_num = float(clean_bal_str)
+                except ValueError:
+                    bal_num = 0.0
+        bal_num = round(bal_num, 2)
+
+        # Parse sub-account hierarchy separated by ':'
+        parts = [p.strip() for p in raw_acct.split(":") if p.strip()]
+        if not parts:
+            continue
+
+        level = len(parts) - 1
+        leaf_part = parts[-1]
+        parent_part = parts[-2] if level > 0 else None
+        parent_full = ":".join(parts[:-1]) if level > 0 else None
+
+        # Extract account number and clean leaf name
+        acct_num = ""
+        if raw_num_val is not None and str(raw_num_val).strip() and str(raw_num_val).lower() not in ["none", "nan"]:
+            if isinstance(raw_num_val, (int, float)):
+                acct_num = str(int(raw_num_val))
+            else:
+                c_num = re.sub(r"[^\d]", "", str(raw_num_val).strip())
+                if c_num:
+                    acct_num = c_num
+
+        m_leaf = re.match(r"^(\d{4,6})\s*[·\-\s\.\u00b7•]\s*(.*)$", leaf_part)
+        if m_leaf:
+            if not acct_num:
+                acct_num = m_leaf.group(1)
+            leaf_clean = m_leaf.group(2).strip()
+        else:
+            leaf_clean = leaf_part
+
+        # Clean bullets/separators
+        leaf_clean = re.sub(r"^[\s\u00b7\u2022\-\–\—\•·\.]+\s*", "", leaf_clean).strip()
+        if not leaf_clean:
+            leaf_clean = leaf_part
+
+        # Parent info
+        parent_acct_num = None
+        parent_acct_name = None
+        if parent_part:
+            pm = re.match(r"^(\d{4,6})\s*[·\-\s\.\u00b7•]\s*(.*)$", parent_part)
+            if pm:
+                parent_acct_num = pm.group(1)
+                parent_acct_name = re.sub(r"^[\s\u00b7\u2022\-\–\—\•·\.]+\s*", "", pm.group(2).strip())
+            else:
+                parent_acct_name = parent_part
+
+        mapped_type, mapped_sub_type, is_repair, is_rental = map_quickbooks_account_type(
+            raw_type,
+            name=leaf_clean,
+            num=acct_num
+        )
+
+        # Validate account number
+        is_valid_num = True
+        num_err = ""
+        if acct_num:
+            is_valid_num, num_err = validate_account_number(acct_num, mapped_type)
+
+        if mapped_type == "ASSET":
+            total_assets += bal_num
+        elif mapped_type == "LIABILITY":
+            total_liabilities += bal_num
+        elif mapped_type == "EQUITY":
+            total_equity += bal_num
+
+        type_counts[mapped_type] = type_counts.get(mapped_type, 0) + 1
+
+        account_entry = {
+            "account_number": acct_num or None,
+            "name": leaf_clean,
+            "full_name": raw_acct,
+            "level": level,
+            "is_sub_account": level > 0,
+            "parent_account_number": parent_acct_num,
+            "parent_account_name": parent_acct_name,
+            "parent_full_name": parent_full,
+            "type": mapped_type,
+            "sub_type": mapped_sub_type,
+            "qb_type": raw_type,
+            "description": raw_desc or None,
+            "tax_line": raw_tax or None,
+            "balance_total": bal_num,
+            "opening_balance": bal_num,
+            "is_repair_category": is_repair,
+            "is_rental_income": is_rental,
+            "is_valid": is_valid_num,
+            "validation_error": num_err if not is_valid_num else None
+        }
+        accounts.append(account_entry)
+
+    # Auto-assign numbers for accounts that had none in the file
+    used_nums = [a["account_number"] for a in accounts if a.get("account_number")]
+    for a in accounts:
+        if not a.get("account_number"):
+            parent_num = a.get("parent_account_number")
+            assigned = suggest_next_account_number(a["type"], used_nums, parent_number=parent_num)
+            a["account_number"] = assigned
+            used_nums.append(assigned)
+            a["auto_assigned_number"] = True
+
+    return {
+        "filename": filename,
+        "sheet_name": selected_sheet_name,
+        "accounts": accounts,
+        "summary": {
+            "total_accounts": len(accounts),
+            "valid_accounts": sum(1 for a in accounts if a.get("is_valid", True)),
+            "invalid_accounts": sum(1 for a in accounts if not a.get("is_valid", True)),
+            "sub_accounts_count": sum(1 for a in accounts if a.get("level", 0) > 0),
+            "total_assets_balance": round(total_assets, 2),
+            "total_liabilities_balance": round(total_liabilities, 2),
+            "total_equity_balance": round(total_equity, 2),
+            "types_breakdown": type_counts
+        }
+    }
+
+
+def import_quickbooks_coa_to_db(
+    accounts: List[Dict[str, Any]],
+    db: Session,
+    overwrite: bool = False,
+    create_opening_balances: bool = True
+) -> Dict[str, Any]:
+    """
+    Imports parsed QuickBooks accounts into the database:
+    - Sorts by hierarchy level so parents exist before children
+    - Links parent_account_id accurately
+    - Records double-entry opening balances via journal_engine
+    - Supports clean overwrite mode
+    """
+    if overwrite:
+        existing_categories = db.query(Category).all()
+        for cat in existing_categories:
+            if not cat.transactions:
+                db.delete(cat)
+            else:
+                cat.is_active = False
+        db.commit()
+
+    # Sort accounts by level (0 root, 1 child, 2 grandchild)
+    sorted_accounts = sorted(accounts, key=lambda a: a.get("level", 0))
+
+    # Lookup caches for parent linking
+    existing_all = db.query(Category).all()
+    accts_by_number: Dict[str, Category] = {c.account_number: c for c in existing_all if c.account_number}
+    accts_by_clean_name: Dict[str, Category] = {c.name.lower().strip(): c for c in existing_all}
+    accts_by_full_path: Dict[str, Category] = {}
+
+    created_count = 0
+    updated_count = 0
+    sub_accounts_linked = 0
+    opening_balances_recorded = 0
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    for a in sorted_accounts:
+        num = a.get("account_number")
+        name = a.get("name", "").strip()
+        if not name:
+            continue
+
+        raw_type = a.get("type") or "OPERATING_EXPENSE"
+        norm_type = normalize_account_type(raw_type)
+        sub_type = a.get("sub_type")
+        desc = a.get("description")
+        is_repair = bool(a.get("is_repair_category", False))
+        is_rental = bool(a.get("is_rental_income", False))
+        bal = float(a.get("balance_total") or a.get("opening_balance") or 0.0)
+
+        # Resolve parent account
+        parent_cat: Optional[Category] = None
+        if a.get("level", 0) > 0:
+            if a.get("parent_account_number") and a.get("parent_account_number") in accts_by_number:
+                parent_cat = accts_by_number[a["parent_account_number"]]
+            elif a.get("parent_full_name") and a["parent_full_name"].lower().strip() in accts_by_full_path:
+                parent_cat = accts_by_full_path[a["parent_full_name"].lower().strip()]
+            elif a.get("parent_account_name") and a["parent_account_name"].lower().strip() in accts_by_clean_name:
+                parent_cat = accts_by_clean_name[a["parent_account_name"].lower().strip()]
+
+        # Target account (find existing or create)
+        target_cat: Optional[Category] = None
+        if num and num in accts_by_number:
+            target_cat = accts_by_number[num]
+        elif name.lower().strip() in accts_by_clean_name:
+            target_cat = accts_by_clean_name[name.lower().strip()]
+
+        if target_cat:
+            target_cat.account_number = num or target_cat.account_number
+            target_cat.name = name
+            target_cat.type = norm_type
+            if sub_type:
+                target_cat.sub_type = sub_type
+            if desc:
+                target_cat.description = desc
+            target_cat.is_repair_category = is_repair
+            target_cat.is_rental_income = is_rental
+            target_cat.is_active = True
+            if parent_cat:
+                target_cat.parent_account_id = parent_cat.id
+                sub_accounts_linked += 1
+            updated_count += 1
+        else:
+            new_cat = Category(
+                account_number=num or None,
+                name=name,
+                type=norm_type,
+                sub_type=sub_type or None,
+                description=desc or None,
+                is_repair_category=is_repair,
+                is_rental_income=is_rental,
+                is_active=True,
+                parent_account_id=parent_cat.id if parent_cat else None,
+                opening_balance=round(bal, 2),
+                opening_balance_date=today_str if abs(bal) > 0.001 else None
+            )
+            db.add(new_cat)
+            db.flush()
+            target_cat = new_cat
+            created_count += 1
+            if parent_cat:
+                sub_accounts_linked += 1
+
+        # Register in lookups
+        if target_cat.account_number:
+            accts_by_number[target_cat.account_number] = target_cat
+        accts_by_clean_name[target_cat.name.lower().strip()] = target_cat
+        if a.get("full_name"):
+            accts_by_full_path[a["full_name"].lower().strip()] = target_cat
+
+        # Opening balance double-entry record
+        if create_opening_balances and abs(bal) > 0.001:
+            target_cat.opening_balance = round(bal, 2)
+            target_cat.opening_balance_date = today_str
+            from .journal_engine import record_opening_balance_entry
+            record_opening_balance_entry(
+                db=db,
+                account=target_cat,
+                opening_balance=target_cat.opening_balance,
+                opening_date=target_cat.opening_balance_date
+            )
+            opening_balances_recorded += 1
+
+    db.commit()
+
+    return {
+        "success": True,
+        "created_count": created_count,
+        "updated_count": updated_count,
+        "total_processed": len(accounts),
+        "sub_accounts_linked": sub_accounts_linked,
+        "opening_balances_recorded": opening_balances_recorded,
+        "message": f"Successfully imported {created_count} accounts ({sub_accounts_linked} sub-accounts, {opening_balances_recorded} opening balance entries recorded)."
+    }
+

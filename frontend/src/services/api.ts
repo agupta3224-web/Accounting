@@ -38,7 +38,10 @@ import {
   BankStatementConfirmPayload,
   BankImportConfirmResult,
   SampleBankStatementFile,
-  RawCsvPreviewResponse
+  RawCsvPreviewResponse,
+  QuickBooksAccountItem,
+  QuickBooksCoaPreviewResult,
+  QuickBooksImportResult
 } from '../types';
 
 const API_BASE = '/api';
@@ -438,6 +441,61 @@ export const api = {
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || 'Failed to import CSV');
+    }
+    return res.json();
+  },
+
+  async previewQuickBooksCoa(file: File): Promise<QuickBooksCoaPreviewResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/coa/quickbooks/preview`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to parse QuickBooks Chart of Accounts file');
+    }
+    return res.json();
+  },
+
+  async importQuickBooksCoa(
+    accounts: QuickBooksAccountItem[],
+    overwrite: boolean = false,
+    createOpeningBalances: boolean = true
+  ): Promise<QuickBooksImportResult> {
+    const res = await fetch(`${API_BASE}/coa/quickbooks/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accounts,
+        overwrite,
+        create_opening_balances: createOpeningBalances
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to import QuickBooks accounts');
+    }
+    return res.json();
+  },
+
+  async importQuickBooksCoaFile(
+    file: File,
+    overwrite: boolean = false,
+    createOpeningBalances: boolean = true
+  ): Promise<QuickBooksImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('overwrite', String(overwrite));
+    formData.append('create_opening_balances', String(createOpeningBalances));
+    const res = await fetch(`${API_BASE}/coa/quickbooks/import-file`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to import QuickBooks export file');
     }
     return res.json();
   },

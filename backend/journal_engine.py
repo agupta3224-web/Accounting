@@ -229,7 +229,7 @@ def record_opening_balance_entry(
     - Liability accounts: Credit Liability, Debit Opening Balance Equity.
     - Equity accounts: Credit Equity, Debit Opening Balance Equity.
     """
-    if not opening_balance or opening_balance <= 0:
+    if opening_balance is None or abs(opening_balance) < 0.001:
         return None
 
     date = opening_date.strip() if opening_date and opening_date.strip() else datetime.now().strftime("%Y-%m-%d")
@@ -280,40 +280,41 @@ def record_opening_balance_entry(
         db.flush()
 
     acct_type = (account.type or "").upper()
+    bal = round(abs(opening_balance), 2)
+
+    # Asset: positive -> Debit Asset, Credit Equity; negative -> Credit Asset, Debit Equity
+    # Liability / Equity / Revenue / Expense: positive -> Credit Account, Debit Equity; negative -> Debit Account, Credit Equity
     if acct_type in ["ASSET", "BANK"]:
-        line1 = JournalEntryLine(
-            journal_entry_id=je.id,
-            line_number=1,
-            category_id=account.id,
-            debit=round(opening_balance, 2),
-            credit=0.0,
-            memo=f"Opening Balance as of {date}"
-        )
-        line2 = JournalEntryLine(
-            journal_entry_id=je.id,
-            line_number=2,
-            category_id=equity_account.id,
-            debit=0.0,
-            credit=round(opening_balance, 2),
-            memo=f"Opening Balance offset for {account.name}"
-        )
+        if opening_balance > 0:
+            line1_dr, line1_cr = bal, 0.0
+            line2_dr, line2_cr = 0.0, bal
+        else:
+            line1_dr, line1_cr = 0.0, bal
+            line2_dr, line2_cr = bal, 0.0
     else:
-        line1 = JournalEntryLine(
-            journal_entry_id=je.id,
-            line_number=1,
-            category_id=account.id,
-            debit=0.0,
-            credit=round(opening_balance, 2),
-            memo=f"Opening Balance as of {date}"
-        )
-        line2 = JournalEntryLine(
-            journal_entry_id=je.id,
-            line_number=2,
-            category_id=equity_account.id,
-            debit=round(opening_balance, 2),
-            credit=0.0,
-            memo=f"Opening Balance offset for {account.name}"
-        )
+        if opening_balance > 0:
+            line1_dr, line1_cr = 0.0, bal
+            line2_dr, line2_cr = bal, 0.0
+        else:
+            line1_dr, line1_cr = bal, 0.0
+            line2_dr, line2_cr = 0.0, bal
+
+    line1 = JournalEntryLine(
+        journal_entry_id=je.id,
+        line_number=1,
+        category_id=account.id,
+        debit=line1_dr,
+        credit=line1_cr,
+        memo=f"Opening Balance as of {date}"
+    )
+    line2 = JournalEntryLine(
+        journal_entry_id=je.id,
+        line_number=2,
+        category_id=equity_account.id,
+        debit=line2_dr,
+        credit=line2_cr,
+        memo=f"Opening Balance offset for {account.name}"
+    )
 
     db.add_all([line1, line2])
     db.commit()

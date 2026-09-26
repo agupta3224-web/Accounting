@@ -165,7 +165,7 @@ def test_import_to_bank_sub_account_and_hierarchical_register(client):
     accts_res = client.get("/api/accounts")
     assert accts_res.status_code == 200
     accounts = accts_res.json()
-    parent_bank = next(a for a in accounts if a.get("account_number") in ["10100", "10010"] or "Operating Checking" in a.get("name", ""))
+    parent_bank = next(a for a in accounts if "Operating Checking" in a.get("name", "") and not a.get("parent_account_id"))
     repair_acct = next(a for a in accounts if a.get("account_number") == "60100")
     
     props_res = client.get("/api/properties")
@@ -186,6 +186,8 @@ def test_import_to_bank_sub_account_and_hierarchical_register(client):
         assert create_res.status_code == 200
         sub_acct_10110 = create_res.json()
     else:
+        if existing_10110.get("parent_account_id") != parent_bank["id"]:
+            client.put(f"/api/accounts/{existing_10110['id']}", json={"parent_account_id": parent_bank["id"]})
         sub_acct_10110 = existing_10110
 
     # 3. Create second sub-account 10120 under 10100
